@@ -1,0 +1,14 @@
+#centerBox {
+    color: black;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    vertical-align: middle;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h5 {
+    opacity: 50%;
+}

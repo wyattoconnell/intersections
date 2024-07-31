@@ -1,0 +1,43 @@
+{
+    "green": {
+      "category_name": "US State Capitals",
+      "items": [
+        "Montgomery", "Juneau", "Phoenix", "Little Rock", "Sacramento", "Denver", "Hartford", "Dover", "Tallahassee", "Atlanta",
+        "Honolulu", "Boise", "Springfield", "Indianapolis", "Des Moines", "Topeka", "Frankfort", "Baton Rouge", "Augusta", "Annapolis",
+        "Boston", "Lansing", "St. Paul", "Jackson", "Jefferson City", "Helena", "Lincoln", "Carson City", "Concord", "Trenton",
+        "Santa Fe", "Albany", "Raleigh", "Bismarck", "Columbus", "Oklahoma City", "Salem", "Harrisburg", "Providence", "Columbia",
+        "Pierre", "Nashville", "Austin", "Salt Lake City", "Montpelier", "Richmond", "Olympia", "Charleston", "Madison", "Cheyenne"
+      ]
+    },
+    "red": {
+      "category_name": "US Presidents' Surnames",
+      "items": [
+        "Washington", "Adams", "Jefferson", "Madison", "Monroe", "Jackson", "Van Buren", "Harrison", "Tyler", "Polk",
+        "Taylor", "Fillmore", "Pierce", "Buchanan", "Lincoln", "Johnson", "Grant", "Hayes", "Garfield", "Arthur",
+        "Cleveland", "Harrison", "McKinley", "Roosevelt", "Taft", "Wilson", "Harding", "Coolidge", "Hoover", "Truman",
+        "Eisenhower", "Kennedy", "Johnson", "Nixon", "Ford", "Carter", "Reagan", "Bush", "Clinton", "Obama", "Trump", "Biden"
+      ]
+    },
+    "yellow": {
+      "category_name": "Top 100 US Car Brands",
+      "items": [
+        "Ford", "Chevrolet", "Toyota", "Honda", "Nissan", "Jeep", "Subaru", "Ram", "GMC", "Dodge", "BMW", "Mercedes-Benz", 
+        "Volkswagen", "Hyundai", "Kia", "Lexus", "Audi", "Mazda", "Buick", "Cadillac", "Chrysler", "Infiniti", "Lincoln", 
+        "Volvo", "Acura", "Mitsubishi", "Tesla", "Porsche", "Mini", "Land Rover", "Jaguar", "Fiat", "Alfa Romeo", 
+        "Genesis", "Maserati", "Bentley", "Ferrari", "Lamborghini", "Rolls-Royce", "Aston Martin", "Bugatti", "McLaren", 
+        "Pagani", "Rivian", "Lucid", "Polestar", "Hummer", "Saab", "Pontiac", "Saturn", "Oldsmobile", 
+        "Plymouth", "Scion", "Isuzu", "Suzuki", "Daewoo", "Mercury", "Eagle", "Geo", "Yugo", "Peugeot", "Renault", 
+        "Smart", "Fisker", "Spyker", "Koenigsegg", "SSC", "Datsun", "Austin-Healey", "DeLorean", "Maybach", 
+        "International", "Studebaker", "Tucker", "Packard", "American Motors", "Hudson", "Nash", "Kaiser", "Crosley", 
+        "Avanti", "Vector", "Zimmer", "Panoz", "Saleen", "SRT", "RUF", "Hennessey", "Shelby", "Callaway"
+      ]
+    },
+    "blue": {
+      "category_name": "Ivy League Schools",
+      "items": [
+        "Brown", "Columbia", "Cornell", "Dartmouth", "Harvard",
+        "University of Pennsylvania", "Princeton", "Yale"
+      ]
+    }
+  }
+  
