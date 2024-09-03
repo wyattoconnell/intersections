@@ -6,13 +6,5 @@ import { Component } from '@angular/core';
   styleUrl: './category.component.css'
 })
 export class CategoryComponent {
-
-  public guesses = ["", "", ""];
-
-  constructor(
-    public color: 'blue' | 'red' | 'yellow' | 'green',
-    private data:string[],
-    public block:HTMLElement
-  ) { }
-
+  
 }
