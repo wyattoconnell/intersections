@@ -1,0 +1,15 @@
+<div class="modal-backdrop" *ngIf="isOpen">
+    <div class="modal">
+      <button (click)="close()" class="close-btn light">&times;</button>
+      <div class="modal-header">
+        <h5 class="light">How To Play</h5>
+      </div>
+      <div class="modal-body">
+        <ng-content></ng-content>
+      </div>
+      <div class="modal-footer">
+        <app-layered-btn (click)="close()"[id]="startBtn" [content]="closeText"></app-layered-btn>
+      </div>
+    </div>
+  </div>
+  

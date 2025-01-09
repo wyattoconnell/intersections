@@ -9,6 +9,7 @@ type Categories = {
   [key: string]: Category;
 };
 
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,9 +17,10 @@ export class ItemSelectorService {
 
   constructor() { }
 
-  selectEfficientItems(categories: Categories): string[] {
+  selectEfficientItems(categories: Categories):  { selectedItems: string[]; intersections: { [key: string]: string[] }} {
     const itemCategories: { [key: string]: string[] } = {};
     const categoryCounts: { [key: string]: number } = {};
+    const intersections: { [key: string]: string[] } = {};
 
     // Initialize category counts and populate itemCategories
     for (const [color, category] of Object.entries(categories)) {
@@ -27,10 +29,13 @@ export class ItemSelectorService {
         if (!itemCategories[item]) {
           itemCategories[item] = [];
         }
-        itemCategories[item].push(color);
+        if (!itemCategories[item].includes(color)) {
+          itemCategories[item].push(color);
+        }
       }
     }
 
+    //return itemCategories;
     const selectedItems: string[] = [];
     const remainingCategories = new Set(Object.keys(categories));
 
@@ -39,6 +44,16 @@ export class ItemSelectorService {
       let maxScore = -1;
 
       for (const [item, cats] of Object.entries(itemCategories)) {
+        if (cats.length > 1) {
+          for (const cat of cats) {
+            if (!intersections[item]) {
+              intersections[item] = [];
+            }
+            if (!intersections[item].includes(cat)) {
+              intersections[item].push(cat);
+            }
+          }
+        }
         const relevantCats = cats.filter(cat => remainingCategories.has(cat));
         const score = relevantCats.length;
         if (score > maxScore) {
@@ -56,7 +71,9 @@ export class ItemSelectorService {
           }
         }
         delete itemCategories[bestItem];
-      } else {
+      } 
+      
+      else {
         // If no best item found, select one item from each remaining category
         for (const cat of remainingCategories) {
           const item = categories[cat].items.find(i => itemCategories[i]);
@@ -69,6 +86,6 @@ export class ItemSelectorService {
       }
     }
 
-    return selectedItems;
+    return {selectedItems, intersections};
   }
 }

@@ -1,0 +1,13 @@
+<div id="nav-container" class="pt-2 float-left position-fixed">
+  <div class="d-flex">
+    <img src="../../assets/intersections_logo.png" alt="intersection logo" id="logo">
+    <div>
+      <h2 class="logo logo-padding">Intersections</h2>
+      <h5 class="sublogo light logo-padding">Your Guesses: {{userScore}}</h5>
+      <h5 class="sublogo light logo-padding">Par: {{shownPar}}</h5>
+    </div>
+  </div>
+</div>
+<div class="p-4 px-4 d-flex justify-content-end">
+  <app-layered-btn [id]="'how-play'" [content]="'How Do I Play?'" (click)="openModal()" class="position-fixed px-5 pt-4"></app-layered-btn>
+</div>

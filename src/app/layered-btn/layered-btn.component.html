@@ -1,0 +1,17 @@
+<div [ngClass]="{ 'used': used }" id="buttons-container">
+    <button [ngClass]="{ 'dark-btn': dark, 'icon-btn': icon }" class="front btn layer-effect button-font">
+      {{content}}
+    </button>
+    <button id="{{id}}1" [ngClass]="{ 'icon-btn': icon }" class="btn layer1 layer-effect button-font">
+      {{content}}
+    </button>
+    <button id="{{id}}2" [ngClass]="{ 'icon-btn': icon }" class="btn layer2 layer-effect button-font">
+      {{content}}
+    </button>
+    <button id="{{id}}3" [ngClass]="{ 'icon-btn': icon }" class="btn layer3 layer-effect button-font">
+      {{content}}
+    </button>
+    <button id="{{id}}4" [ngClass]="{ 'icon-btn': icon }" class="btn layer4 layer-effect button-font">
+      {{content}}
+    </button>
+</div>

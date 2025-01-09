@@ -1,0 +1,101 @@
+.btn {
+    border-radius: 20px;
+}
+
+.used {
+  opacity: 20%;
+}
+
+.layer-effect {
+    position: absolute;
+    opacity: 0.6;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    transition: transform 0.2s ease;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .front {
+    z-index: 2000;
+    opacity: 1;
+    background-color: rgb(255, 255, 255);
+    transition: transform 0.2s ease;
+    color: black;
+    border: 1px solid black;
+  }
+
+  .layer1 .layer2 .layer3 .layer4 {
+    color: transparent;
+  }
+  
+  .layer1 {
+    background-color: rgb(0, 216, 10);
+    color: rgb(0, 216, 10);
+    z-index: 2;
+    transition: transform 0.3s ease;
+  }
+  
+  .layer2 {
+    background-color: #0CBAF1;
+    color: #0CBAF1;
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+  
+  .layer3 {
+    background-color: #FE0606;
+    color: #FE0606;
+    z-index: 3;
+    transition: transform 0.3s ease;
+  }
+  
+  .layer4 {
+    background-color: #F2FF00;
+    color: #F2FF00;
+    z-index: 4;
+    transition: transform 0.3s ease;
+  }
+
+  #buttons-container:hover:not(.used) .layer1 {
+      transform: translate(calc(-50% - 4px), calc(-50% + 4px));
+  }
+
+  #buttons-container:hover:not(.used) .layer2 {
+      transform: translate(calc(-50% + 4px), calc(-50% - 4px));
+  }
+
+  #buttons-container:hover:not(.used) .layer4 {
+      transform: translate(calc(-50% + 10px), calc(-50% + 4px));
+  }
+
+  #buttons-container:hover:not(.used) .layer3 {
+      transform: translate(calc(-50% - 10px), calc(-50% - 4px));
+  }
+
+
+  .dark-btn {
+    background-color: black;
+    color: white;
+    border: none; 
+    cursor: pointer;
+  }
+
+  .icon-btn {
+    padding: 2px 12px;
+  }
+  
+
+  /* FONTS */
+
+  .button-font {
+    font-family: "Comfortaa", serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+  }

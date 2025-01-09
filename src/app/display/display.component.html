@@ -1,0 +1,57 @@
+<div id="display-div">
+    <div id="details" class="display-backdrop d-flex justify-content-center">
+    
+    <!-- End Message -->
+    <div *ngIf="showEndMessage" id="end-message-content">
+            <div style="position: absolute; top: 0%; left: 50%; transform: translate(-229px, calc(18vh + 21px));">
+                <app-layered-btn [icon]="true" [content]="'←'" [id]="'back-btn'" (click)="toggleDisplay()"></app-layered-btn>
+            </div>
+            <h2 class="bold half centered-text">{{userScore-par}} Above Par</h2>
+            <div class="pt-5">
+                <!-- Found Section -->
+                <h5 class="bold half pb-3">Intersections You Found</h5>
+                <div class="two-column-grid half pb-3">
+                    <div *ngFor="let key of getKeys(found)" class="int-item-div d-flex justify-content-between">
+                        <div class="normal int-item">
+                        {{ toLowerCase(key) }}
+                        </div>
+                        <div class="d-flex circle-div">
+                            <span *ngFor="let value of found[key]; let last = last" class="color-circle" [ngStyle]="{'background-color': colorMap[value]}">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            <div class="pt-3">
+                <!-- Missed Section -->
+                <h5 class="bold half pb-3">Intersections You Missed</h5>
+                <div class="two-column-grid half">
+                    <div *ngFor="let key of getKeys(missed)" class="int-item-div d-flex justify-content-between">
+                        <div class="normal int-item">
+                        {{ toLowerCase(key) }}
+                        </div>
+                        <div class="d-flex circle-div">
+                            <span *ngFor="let value of missed[key]; let last = last" class="color-circle" [ngStyle]="{'background-color': colorMap[value]}">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Instructions -->
+    <div *ngIf="showInstructions" id="instructions-content">
+        <div style="position: absolute; top: 0%; left: 50%; transform: translate(-229px, calc(18vh + 21px));">
+            <app-layered-btn [icon]="true" [content]="'←'" [id]="'back-btn'" (click)="toggleDisplay()"></app-layered-btn>
+        </div>
+        <h2 class="bold half centered-text pb-4">How To Play</h2>
+        <p class="half normal">
+            <span class="bold">Your objective is to submit 3 words belonging to each category in as few guesses as possible.</span> <br><br>
+            You do so by entering guesses into the textbox at the bottom of your screen and trying to identify <span class="bold">intersections</span>, or words that fall into multiple categories. The more <span class="bold">intersections</span> you find, the less guesses you'll need to complete the puzzle. <br><br>
+            The <span class="bold">par</span> value represents the lowest possible amount of guesses required to complete the puzzle. The closer you get to <span class="bold">par</span>, the better your score! The <span class="bold">par</span> value is hidden to start off, but if you get stuck, you can use the <span class="bold">Reveal Par</span> button to see if you're on the right track.
+        </p>
+        <div style="position: absolute; top: 0%; left: 50%; transform: translate(0px, calc(18vh + 445px));">
+            <app-layered-btn [content]="'Start Game'" [id]="'start-game'" (click)="toggleDisplay()"></app-layered-btn>
+        </div>
+    </div>
+</div>

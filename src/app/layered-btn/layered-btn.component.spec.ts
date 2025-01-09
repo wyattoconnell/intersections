@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CategoryComponent } from './category.component';
+import { LayeredBtnComponent } from './layered-btn.component';
 
-describe('CategoryComponent', () => {
-  let component: CategoryComponent;
-  let fixture: ComponentFixture<CategoryComponent>;
+describe('LayeredBtnComponent', () => {
+  let component: LayeredBtnComponent;
+  let fixture: ComponentFixture<LayeredBtnComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CategoryComponent]
+      declarations: [LayeredBtnComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(CategoryComponent);
+    fixture = TestBed.createComponent(LayeredBtnComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

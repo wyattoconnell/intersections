@@ -1,0 +1,18 @@
+<div style="color: black">
+  <div style="position: relative; width: 100%; height: 100%;">
+    <div id="smallModal" class="modal normal">Results copied to clipboard!</div>
+    <div>
+      <h5 id="instructions" class="normal padding">You Completed Today's Puzzle!</h5>
+      <div class="d-flex flex-row justify-content-center">
+          <h3 class="pt-2 bold">{{userScore-7}} Above Par</h3>
+      </div>
+    </div>
+    <div class="pb-5 pt-4 normal" style="position: absolute; top: 160%; left: 27%; transform: translate(-50%, -50%);">
+      <app-layered-btn [id]="detailsBtn" [content]="seeDetails" (click)="toggleDisplay()"></app-layered-btn>
+    </div>
+
+    <div class="pt-5 ps-5" style="position: absolute; top: 160%; left: 73%; transform: translate(-50%, -50%);">
+      <app-layered-btn [id]="shareBtn" [dark]="dark" [content]="shareResults" (click)="copyResults()"></app-layered-btn>
+    </div>
+  </div>                 
+</div>

@@ -1,0 +1,106 @@
+.btn {
+  border-radius: 20px;
+}
+
+#nav-container {
+  z-index: 10000;
+}
+
+app-layered-btn {
+  padding-right: 3.5rem !important;
+}
+
+#logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    margin-top: 8px;
+    margin-right: 20px;
+}
+
+.logo-padding {
+  margin-bottom: 5px;
+}
+
+.light {
+  color: rgb(0, 0, 0);
+  opacity: 90%;
+}
+
+
+  .layer-effect {
+    position: absolute;
+    opacity: 0.4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    transition: transform 0.2s ease;
+    transform: translate(-90%, -0%);
+  }
+
+  #howplay {
+    z-index: 2000;
+    opacity: 1;
+    background-color: lightgrey;
+    transition: transform 0.2s ease;
+    color: rgb(160, 160, 160);
+  }
+  
+  #howplay1 {
+    background-color: rgb(0, 216, 10);
+    z-index: 2;
+    transition: transform 0.3s ease;
+  }
+  
+  #howplay2 {
+    background-color: #0CBAF1;
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+  
+  #howplay3 {
+    background-color: #FE0606;
+    z-index: 3;
+    transition: transform 0.3s ease;
+  }
+  
+  #howplay4 {
+    background-color: #F2FF00;
+    z-index: 4;
+    transition: transform 0.3s ease;
+  }
+
+  #buttons-container:hover #howplay1 {
+    transform: translate(-100%, 15%);
+  }
+  
+  #buttons-container:hover #howplay2 {
+    transform: translate(-80%, -15%);
+  }
+  
+  #buttons-container:hover #howplay3 {
+    transform: translate(-85%, 15%);
+  }
+  
+  #buttons-container:hover #howplay4 {
+    transform: translate(-95%, -15%);
+  }
+
+    /* FONTS */
+
+    .logo {
+      font-family: "Comfortaa", serif;
+      font-optical-sizing: auto;
+      font-weight: 900;
+      font-style: normal;
+    }
+
+    .sublogo {
+      font-family: "Comfortaa", serif;
+      font-optical-sizing: auto;
+      font-weight: 300;
+      font-style: normal;
+    }
