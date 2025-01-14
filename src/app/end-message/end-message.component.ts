@@ -14,6 +14,7 @@ export class EndMessageComponent {
 
   dark: boolean = true;
   @Input() userScore = 0;
+  @Input() par = 0;
   @Input() displayView = false;
   @Output() openDisplay = new EventEmitter<boolean>();
   closeText:String = "Start Game";
@@ -27,7 +28,7 @@ export class EndMessageComponent {
   }
 
   copyResults() {
-    let message: string = "I finished today's Intersections with a score of " + this.userScore + " over par! Try to beat me at https://intersections.in/";
+    let message: string = "I finished today's Intersections with a score of " + (this.userScore - this.par) + " over par! Try to beat me at https://intersections.in/";
     this.clipboard.copy(message);
     this.showModal();
   }

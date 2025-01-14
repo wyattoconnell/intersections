@@ -104,8 +104,8 @@ export class GameviewComponent implements OnInit{
         playButton.style.display = 'none';
     }
     this.toggleTextField("open");
-    //this.expand();
-    this.expandAtEnd();
+    this.expand();
+    //this.expandAtEnd();
   }
 
   toggleInstructionsDisplay(displayView: boolean) {

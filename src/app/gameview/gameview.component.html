@@ -4,7 +4,7 @@
     <app-navbar [userScore]="userScore" [shownPar]="shownPar" [par]="par" [isOpen]="isOpen" (onOpen)="toggleInstructionsDisplay($event)"></app-navbar>
     <div class="mt-3 d-flex flex-column justify-content-center">
         <div class="pb-1" id="instructions-div">
-            <app-end-message [displayView]="displayView" (openDisplay)="toggleEndMessageDisplay($event)" [userScore]="userScore"></app-end-message>
+            <app-end-message [displayView]="displayView" (openDisplay)="toggleEndMessageDisplay($event)" [userScore]="userScore" [par]="par"></app-end-message>
         </div>
         <div class="container diamond">
             <div class="row row-stretch">
