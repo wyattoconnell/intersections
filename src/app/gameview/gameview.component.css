@@ -1,5 +1,4 @@
 .diamond {
-    margin-top: 2vh;
     width: 490px;
     height: 490px;
     min-height: 490px;
@@ -244,9 +243,18 @@ input {
     font-style: normal;
   }
   
+/* Mobile styles */
+@media (max-width: 768px) {
+    .diamond {
+        width: 450px;
+        height: 600px;
+        min-height: 600px;
+        min-width: 450px;
+        position: absolute; 
+        transform: translate(-50%, -55%); 
+    }
+}
   
-
-
 
 
 

@@ -2,10 +2,11 @@
     <app-display id="display" *ngIf="displayView" [showEndMessage]="showEndMessage" [showInstructions]="showInstructions" [displayView]="displayView" (openDisplay)="toggleDisplay($event)"[found]="found" [missed]="missed" [userScore]="userScore" [par]="par"></app-display>
     <app-instruction-modal [isOpen]="isOpen" (onClose)="toggleModal($event)"></app-instruction-modal>
     <app-navbar [userScore]="userScore" [shownPar]="shownPar" [par]="par" [isOpen]="isOpen" (onOpen)="toggleInstructionsDisplay($event)"></app-navbar>
-    <div class="mt-3 d-flex flex-column justify-content-center">
+    <div class="d-flex flex-column justify-content-center">
         <div class="pb-1" id="instructions-div">
             <app-end-message [displayView]="displayView" (openDisplay)="toggleEndMessageDisplay($event)" [userScore]="userScore" [par]="par"></app-end-message>
         </div>
+        <div style="height: 100vh">
         <div class="container diamond">
             <div class="row row-stretch">
                 <app-center class="hidden col d-flex flex-row-reverse"></app-center>
@@ -31,16 +32,17 @@
                 <div id="centerBox" class="col d-flex flew-row justify-content-center">
                     <div (click) = "revealGame()" id="play-button">
                         <svg   
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="-50 0 475 475"
-                        style="display: block; margin: auto;"
-                        preserveAspectRatio="xMidYMid meet">
-                        <path 
-                          d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z" 
-                          fill="white" 
-                          opacity="1.0" 
-                        />
-                      </svg>                      
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="-50 -10 475 1000"
+                            style="display: block; margin: auto;"
+                            preserveAspectRatio="xMidYMid meet">
+                            <path 
+                            d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z" 
+                            fill="none" 
+                            stroke="black" 
+                            stroke-width="25" 
+                            />
+                        </svg>
                     </div>
                     <p id="centertext" class="normal">{{innerText}}</p>
                 </div>
@@ -65,6 +67,7 @@
                 </div>
                 <app-center class="hidden col d-flex flew-row"></app-center>
             </div>
+        </div>
         </div>
         <div id="text-field" class="p-4 flex-row justify-content-center fixed-bottom normal">
             <button class="m-2 undo btn btn-outline-dark normal" style="opacity: 0%">

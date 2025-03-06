@@ -23,7 +23,7 @@
     position: absolute;
     top: 50%; /* Center vertically */
     left: 50%; /* Center horizontally */
-    transform: translate(-50%, -40vh); /* Align the center */
+    transform: translate(-50%, -220px); /* Align the center */
     padding: 15px;
     background-color: #333; /* Dark background */
     color: #fff; /* White text */

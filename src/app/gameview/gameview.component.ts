@@ -80,7 +80,7 @@ export class GameviewComponent implements OnInit{
     setTimeout(() => {
       let mag = -200;
       this.contract(mag);
-    }, 3);
+    }, 25);
     
   }
 
