@@ -97,14 +97,14 @@
 }
 
 .scrollable-content {
-    max-height: 50vh; /* Adjust this value as needed */
+    max-height: 60vh; 
     overflow-y: auto;
     padding-right: 10px; /* Adds some space for the scrollbar */
   }
   
   /* Optional: Style the scrollbar for better appearance */
   .scrollable-content::-webkit-scrollbar {
-    width: 8px;
+    width: 5px;
   }
   
   .scrollable-content::-webkit-scrollbar-track {

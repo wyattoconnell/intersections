@@ -5,7 +5,7 @@
     top: 50%; 
     left: 50%; 
     transform: translate(-50%, -55%); 
-    overflow: hidden;
+    overflow: visible;
 }
 
 #display {
@@ -281,6 +281,7 @@ input {
         height: 500px;
         position: absolute; 
         transform: translate(-50%, -55%); 
+        overflow: hidden;
     }
     #play-button{
       margin-bottom: 0px;
@@ -288,19 +289,19 @@ input {
     }
 
     .bold {
-        font-size: 14px;
+        font-size: 16px;
       }
     
       .normal {
-        font-size: 14px;
+        font-size: 16px;
       }
     
       input::placeholder {
-        font-size: 14px;
+        font-size: 16px;
       }
     
       input {
-        font-size: 14px;
+        font-size: 16px;
     }
 
        #reveal-btn {
@@ -312,7 +313,7 @@ input {
       }
     
       #submitGuess {
-        width: 224px;
+        width: 250px;
       }
 
       #reveal-mobile, #submit-mobile {
@@ -329,6 +330,7 @@ input {
     .diamond {
         width: 350px;
         height: 480px;
+        overflow: hidden;
     }  
 
     #play_button {
@@ -360,6 +362,10 @@ input {
         font-size: 24px;
         line-height: normal;
     }
+
+  #submitGuess {
+    width: 250px;
+  }
 }
 
 
