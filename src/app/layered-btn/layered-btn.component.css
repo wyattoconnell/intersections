@@ -99,3 +99,9 @@
     font-weight: 300;
     font-style: normal;
   }
+
+  @media (max-width: 768px) {
+    .layer-effect {
+      font-size: 14px;
+    }
+  }

@@ -82,3 +82,60 @@
     font-weight: 300;
     font-style: normal;
 }
+
+#back-to-game-btn {
+    position: absolute;
+    top: 0%;
+    left: 50%;
+    transform: translate(0px, calc(18vh + 445px));
+}
+
+#back-btn {
+    position: absolute; 
+    top: 0%; left: 50%; 
+    transform: translate(-226px, calc(18vh + 21px));
+}
+
+.scrollable-content {
+    max-height: 50vh; /* Adjust this value as needed */
+    overflow-y: auto;
+    padding-right: 10px; /* Adds some space for the scrollbar */
+  }
+  
+  /* Optional: Style the scrollbar for better appearance */
+  .scrollable-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollable-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .scrollable-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+@media (max-width: 768px) {
+
+    #back-to-game-btn {
+        transform: translate(0px, calc(40vh + 445px));
+    }
+
+    #back-btn {
+        transform: translate(-130px, calc(14vh + 21px));
+    }
+
+    #instructions-title {
+        padding-top: 20px;
+    }
+
+    .half {
+        width: 300px;
+    }
+}

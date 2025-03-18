@@ -104,3 +104,29 @@ app-layered-btn {
       font-weight: 300;
       font-style: normal;
     }
+
+    @media (max-width: 768px) {
+      .logo {
+        font-size: 22px;
+      }
+      
+      #logo {
+        display: none;
+      }
+
+      .sublogo {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .logo {
+        font-size: 18px;
+      }
+
+      .sublogo {
+        font-size: 14px;
+      }
+      
+      
+    }

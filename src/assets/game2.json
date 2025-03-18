@@ -1,0 +1,33 @@
+{
+  "green": {
+    "category_name": "Major Roman Gods",
+    "items": [
+      "Jupiter", "Juno", "Neptune", "Mars", "Venus", "Apollo", "Diana", "Minerva", "Mercury", "Vulcan",
+      "Ceres", "Vesta", "Janus", "Bacchus", "Pluto", "Proserpina", "Fortuna", "Bellona", "Aurora", "Terra"
+    ]
+  },
+  "red": {
+    "category_name": "Planets in the Milky Way",
+    "items": [
+      "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"
+    ]
+  },
+  "yellow": {
+    "category_name": "NASA Space Programs",
+    "items": [
+      "Mercury", "Gemini", "Apollo", "Skylab", "Space Shuttle",
+      "International Space Station", "Artemis", "Commercial Crew", "Constellation",
+      "New Frontiers", "Discovery", "Explorer", "Voyager", "Mars Exploration",
+      "Lunar Reconnaissance Orbiter", "James Webb Space Telescope", "Hubble Space Telescope",
+      "Earth Science", "Astrobiology", "Deep Space Network"
+    ]
+  },
+  "blue": {
+    "category_name": "Periodic Elements",
+    "items": [
+      "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen", "Oxygen", "Fluorine", "Neon",
+      "Sodium", "Magnesium", "Aluminum", "Silicon", "Phosphorus", "Sulfur", "Chlorine", "Argon", "Potassium", "Calcium",
+      "Iron", "Copper", "Zinc", "Silver", "Gold", "Platinum", "Uranium", "Lead", "Mercury", "Tin"
+    ]
+  }
+}

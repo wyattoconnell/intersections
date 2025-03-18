@@ -33,14 +33,15 @@
                     <div (click) = "revealGame()" id="play-button">
                         <svg   
                             xmlns="http://www.w3.org/2000/svg"
-                            viewBox="-50 -10 475 1000"
-                            style="display: block; margin: auto;"
+                            viewBox="-50 -80 475 1000"
+                            style="margin: auto;"
                             preserveAspectRatio="xMidYMid meet">
                             <path 
                             d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z" 
                             fill="none" 
                             stroke="black" 
                             stroke-width="25" 
+                            id="big_play"
                             />
                         </svg>
                     </div>
@@ -70,26 +71,26 @@
         </div>
         </div>
         <div id="text-field" class="p-4 flex-row justify-content-center fixed-bottom normal">
-            <button class="m-2 undo btn btn-outline-dark normal" style="opacity: 0%">
+            <button class="m-2 undo btn btn-outline-dark normal" id="reveal-mobile" (click)="revealPar()">
                 Reveal Par
             </button>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-192px, 0px);">
+            <div id="reveal-btn">
                 <app-layered-btn [id]="'reveal-btn'" [used]="used" [content]="'Reveal Par'" (click)="revealPar()"></app-layered-btn>
             </div>
             <form (ngSubmit)="onSubmit()">
-                <div id="input" class="form-group mb-0 mt-1 justify-content-center normal sticky-bottom">
+                <div id="input" class="form-group mb-0 mt-2 justify-content-center normal sticky-bottom">
                   <input [(ngModel)]="innerText" 
                          (ngModelChange)="convertToLowercase()" 
                          name="innerText" 
                          id="submitGuess" 
                          placeholder="Enter 3 Words Per Category" 
-                         style="width: 280px;">
+                        >
                 </div>
               </form>              
-            <button type="submit" class="m-2 clear btn btn-outline-dark normal" style="opacity: 0%">
+            <button type="submit" class="m-2 clear btn btn-outline-dark normal" id="submit-mobile" (click)="onSubmit()">
                 Submit
             </button>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(205px, 0px);">
+            <div id="submit-btn">
                 <app-layered-btn [id]="'submitBtn'" (click)="onSubmit()" [content]="'Submit'"></app-layered-btn>
             </div>
         </div>

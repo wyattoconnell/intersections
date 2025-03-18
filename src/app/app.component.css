@@ -4,8 +4,6 @@ app-gameview {
     left: 0;
     width: 100%;
     z-index: 2; 
-    min-width: 850px;
-    min-height: 650px;
     background-color: white;
   }
   

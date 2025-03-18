@@ -1,12 +1,11 @@
 .diamond {
     width: 490px;
     height: 490px;
-    min-height: 490px;
-    min-width: 490px;
     position: absolute; 
     top: 50%; 
     left: 50%; 
     transform: translate(-50%, -55%); 
+    overflow: hidden;
 }
 
 #display {
@@ -213,6 +212,23 @@ input {
     display: none;
   }
 
+  #reveal-btn {
+    position: absolute; 
+    top: 50%; left: 50%; 
+    transform: translate(-192px, 4px);
+  }
+
+  #submit-btn {
+    position: absolute; 
+    top: 50%; left: 50%; 
+    transform: translate(205px, 4px);
+  }
+
+  #submitGuess {
+    width: 280px;
+    z-index: 100;
+  }
+
   /* FONTS */
 
   .bold {
@@ -242,20 +258,108 @@ input {
     font-weight: 300;
     font-style: normal;
   }
+
+  #reveal-btn2, #submit-mobile {
+    opacity: 0%;
+  }
+
+  #play-button{
+    margin-bottom: 20px;
+  }
+
+@media (min-width: 768px) {
+  #reveal-mobile, #submit-mobile {
+    opacity: 0 !important;
+  }
+}
+  
   
 /* Mobile styles */
 @media (max-width: 768px) {
     .diamond {
-        width: 450px;
-        height: 600px;
-        min-height: 600px;
-        min-width: 450px;
+        width: 400px;
+        height: 500px;
         position: absolute; 
         transform: translate(-50%, -55%); 
     }
+    #play-button{
+      margin-bottom: 0px;
+      padding-top: 5px;
+    }
+
+    .bold {
+        font-size: 14px;
+      }
+    
+      .normal {
+        font-size: 14px;
+      }
+    
+      input::placeholder {
+        font-size: 14px;
+      }
+    
+      input {
+        font-size: 14px;
+    }
+
+       #reveal-btn {
+        display: none;
+      }
+    
+      #submit-btn {
+        display: none;
+      }
+    
+      #submitGuess {
+        width: 224px;
+      }
+
+      #reveal-mobile, #submit-mobile {
+        opacity: 100%;
+      }
+
+}
+
+#play_button {
+  margin-bottom: 50px;
 }
   
+@media (max-width: 560px) {
+    .diamond {
+        width: 350px;
+        height: 480px;
+    }  
 
+    #play_button {
+      padding-bottom: 5px;
+    }
 
+    #reveal-mobile, #submit-mobile {
+        opacity: 100%;
+        font-family: "Font Awesome 5 Free"; /* or "Font Awesome 6 Free" depending on your version */
+        font-weight: 900;
+        background: none;
+        font-size: 24px;
+        padding: 10px;
+        cursor: pointer;
+        color: inherit;
+        /* Hide text content */
+        font-size: 0;
+        line-height: 0;
+    }
+    
+    #reveal-mobile::before {
+        content: "\f06e"; /* FontAwesome eye/reveal icon */
+        font-size: 24px;
+        line-height: normal;
+    }
+    
+    #submit-mobile::before {
+        content: "\f061"; /* FontAwesome arrow-right/submit icon */
+        font-size: 24px;
+        line-height: normal;
+    }
+}
 
 

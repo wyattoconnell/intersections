@@ -35,3 +35,49 @@
     text-align: center;
     z-index: 1000; /* Ensure it’s above other elements */
   }
+
+  #share-btn {
+    position: absolute;
+    top: 145%;
+    left: 73%;
+    transform: translate(-50%, -50%);
+  }
+
+  #details-btn {
+    position: absolute;
+    top: 145%;
+    left: 27%;
+    transform: translate(-50%, -50%);
+  }
+
+  @media (max-width: 768px) {
+    .modal {
+      width: 250px;
+      height: 50px;
+      font-size: 8px;
+    }
+
+    .bold {
+      font-size: 22px;
+    }
+  
+    .normal {
+      font-size: 14px;
+    }
+
+    #share-btn {
+      position: absolute;
+      top: calc(90% + 60px);
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  
+    #details-btn {
+      position: absolute;
+      top: 90%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    
+  }

@@ -145,6 +145,10 @@ export class GameviewComponent implements OnInit{
   revealPar() {
     this.used = true;
     this.shownPar = this.par.toString();
+    let target = document.getElementById("reveal-mobile");
+    if (target) {
+      target.style.setProperty("opacity", "0.3");
+    }
   }
 
   select(div: HTMLDivElement, axis: 'x' | 'y', mag: number, opac: string, text: HTMLElement, guesses: HTMLDivElement) {
@@ -177,7 +181,7 @@ export class GameviewComponent implements OnInit{
         setTimeout(() => this.innerText = "", 500);
         setTimeout(() => this.userScore += 1, 500);
       }
-    }, 500);
+    }, 200);
   }
 
   convertToLowercase(): void {
@@ -269,10 +273,21 @@ export class GameviewComponent implements OnInit{
         div.style.display = 'flex';
       }
     }, 1000);
-    this.select(this.blue.nativeElement, 'y', 30, "100", this.bluetext.nativeElement, this.blueGuesses.nativeElement);
-    this.select(this.green.nativeElement, 'y', -20, "100", this.greentext.nativeElement, this.greenGuesses.nativeElement);
-    this.select(this.yellow.nativeElement, 'x', 120, "100", this.yellowtext.nativeElement, this.yellowGuesses.nativeElement);
-    this.select(this.red.nativeElement, 'x', -120, "100", this.redtext.nativeElement, this.redGuesses.nativeElement);
+    
+    // Check screen width and apply different positioning
+    if (window.innerWidth < 768) {
+      // Mobile positioning
+      this.select(this.blue.nativeElement, 'y', 60, "100", this.bluetext.nativeElement, this.blueGuesses.nativeElement);
+      this.select(this.green.nativeElement, 'y', -10, "100", this.greentext.nativeElement, this.greenGuesses.nativeElement);
+      this.select(this.yellow.nativeElement, 'x', 60, "100", this.yellowtext.nativeElement, this.yellowGuesses.nativeElement);
+      this.select(this.red.nativeElement, 'x', -60, "100", this.redtext.nativeElement, this.redGuesses.nativeElement);
+    } else {
+      // Desktop positioning (original values)
+      this.select(this.blue.nativeElement, 'y', 30, "100", this.bluetext.nativeElement, this.blueGuesses.nativeElement);
+      this.select(this.green.nativeElement, 'y', -20, "100", this.greentext.nativeElement, this.greenGuesses.nativeElement);
+      this.select(this.yellow.nativeElement, 'x', 120, "100", this.yellowtext.nativeElement, this.yellowGuesses.nativeElement);
+      this.select(this.red.nativeElement, 'x', -120, "100", this.redtext.nativeElement, this.redGuesses.nativeElement);
+    }
   }
 }
 
