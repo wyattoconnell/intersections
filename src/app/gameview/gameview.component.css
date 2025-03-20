@@ -231,7 +231,7 @@ input {
 
   /* FONTS */
 
-  .bold {
+  .bold, .normal {
     font-family: "Comfortaa", serif;
     font-optical-sizing: auto;
     font-weight: 800;
@@ -239,10 +239,7 @@ input {
   }
 
   .normal {
-    font-family: "Comfortaa", serif;
-    font-optical-sizing: auto;
     font-weight: 300;
-    font-style: normal;
   }
 
   input::placeholder {
@@ -276,24 +273,24 @@ input {
   
 /* Mobile styles */
 @media (max-width: 768px) {
+    .cat {
+      min-height: 175px;
+    }
+    
     .diamond {
         width: 400px;
-        height: 500px;
+        height: auto;
         position: absolute; 
         transform: translate(-50%, -55%); 
-        overflow: hidden;
+        overflow-x: hidden; 
     }
     #play-button{
       margin-bottom: 0px;
-      padding-top: 5px;
+      padding-top: 35px;
     }
 
-    .bold {
-        font-size: 16px;
-      }
-    
-      .normal {
-        font-size: 16px;
+    .bold, .normal{
+        font-size: 14px;
       }
     
       input::placeholder {
@@ -329,12 +326,10 @@ input {
 @media (max-width: 560px) {
     .diamond {
         width: 350px;
-        height: 480px;
-        overflow: hidden;
     }  
 
     #play_button {
-      padding-bottom: 5px;
+      padding-top: 5px;
     }
 
     #reveal-mobile, #submit-mobile {
