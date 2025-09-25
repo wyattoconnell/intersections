@@ -1,15 +1,19 @@
 <div id="display-div">
+
+    <div class="top-scrim"></div>
+    <div id="back-btn">
+        <app-layered-btn [icon]="true" [content]="'←'" [id]="'back-btn'" (click)="toggleDisplay()"></app-layered-btn>
+    </div>
+    <h2 class="bold title half centered-text pt-3 pt-m-0 mt-lg-0">{{userScore-par}} Above Par</h2>
+
     <div id="details" class="display-backdrop d-flex justify-content-center">
     
     <!-- End Message -->
     <div *ngIf="showEndMessage" id="end-message-content">
-            <div id="back-btn">
-                <app-layered-btn [icon]="true" [content]="'←'" [id]="'back-btn'" (click)="toggleDisplay()"></app-layered-btn>
-            </div>
-            <h2 class="bold half centered-text pt-3 pt-m-0 mt-lg-0">{{userScore-par}} Above Par</h2>
+
             <div class="pt-5">
                 <!-- Found Section -->
-                <h5 class="bold half pb-3">Intersections You Found</h5>
+                <h5 class="bold half pb-3 pt-5">Intersections You Found</h5>
                 <div class="two-column-grid half pb-3">
                     <div *ngFor="let key of getKeys(found)" class="int-item-div d-flex justify-content-between">
                         <div class="normal int-item">
@@ -21,10 +25,10 @@
                         </div>
                     </div>
                 </div>
-            <div class="pt-3">
+            <div id="items" class="pt-3 pb-5">
                 <!-- Missed Section -->
                 <h5 class="bold half pb-3">Intersections You Missed</h5>
-                <div class="two-column-grid half">
+                <div class="two-column-grid half" style="margin-bottom: 25vh">
                     <div *ngFor="let key of getKeys(missed)" class="int-item-div d-flex justify-content-between">
                         <div class="normal int-item">
                         {{ toLowerCase(key) }}
@@ -44,9 +48,9 @@
         <div id="back-btn">
             <app-layered-btn [icon]="true" [content]="'←'" [id]="'back-btn'" (click)="toggleDisplay()"></app-layered-btn>
         </div>
-        <h2 id="instructions-title" class="bold half centered-text pb-4">How To Play</h2>
+        <h2 id="instructions-title" class="bold title half centered-text pb-4">How To Play</h2>
         <div class="half scrollable-content">
-            <p class="normal">
+            <p class="normal pt-5 mt-5">
                 <span class="bold">Your objective is to submit 3 words belonging to each category in as few guesses as possible.</span> <br><br>
                 You do so by entering guesses into the textbox at the bottom of your screen and trying to identify <span class="bold">intersections</span>, or words that fall into multiple categories. The more <span class="bold">intersections</span> you find, the less guesses you'll need to complete the puzzle. <br><br>
                 The <span class="bold">par</span> value represents the lowest possible amount of guesses required to complete the puzzle. The closer you get to <span class="bold">par</span>, the better your score! The <span class="bold">par</span> value is hidden to start off, but if you get stuck, you can use the <span class="bold">Reveal Par</span> button or the <span class="bold">Eye</span> icon to see if you're on the right track.

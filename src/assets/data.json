@@ -1,42 +1,38 @@
 {
-    "green": {
-      "category_name": "US President Alma Maters",
+  "green": {
+      "category_name": "States with Highest IQ (Top 10)",
       "items": [
-        "Harvard", "Yale", "Columbia", "Princeton", "Georgetown",
-        "Stanford", "UVA", "Navy", "Occidental",
-        "West Point", "Delaware", "Miami Ohio", "UNC",
-        "Texas State", "Eureka", "Whittier", "Amherst", "Bowdoin"
+          "Massachusetts", "New Hampshire", "North Dakota", "Vermont", "Minnesota",
+          "Maine", "Montana", "Iowa", "Connecticut", "Wisconsin", "x", "x", "x"
       ]
-    },
-    "red": {
-      "category_name": "NFL MVP Alma Maters",
+  },
+  "red": {
+      "category_name": "States with National Parks",
       "items": [
-        "Auburn", "Louisville", "Texas Tech", "Cal", "USC",
-        "Stanford", "Texas", "Penn State", "Michigan",
-        "Florida", "Tennessee", "LSU", "Oklahoma", "Wyoming",
-        "Mississippi Valley State", "Alabama", "Navy", "Grambling State"
+          "Alaska", "American Samoa", "Arizona", "Arkansas", "California",
+          "Colorado", "Florida", "Hawaii", "Idaho", "Indiana",
+          "Kentucky", "Maine", "Michigan", "Minnesota", "Missouri",
+          "Montana", "Nebraska", "Nevada", "New Mexico", "North Carolina",
+          "North Dakota", "Ohio", "Oregon", "South Carolina", "South Dakota",
+          "Tennessee", "Texas", "Utah", "Virginia", "Washington",
+          "West Virginia", "Wyoming", "x", "x", "x"
       ]
-    },
-    "yellow": {
-      "category_name": "NBA MVP Alma Maters",
+  },
+  "yellow": {
+      "category_name": "Blue States in 2024 Election",
       "items": [
-        "Kansas", "Cincinnati", "Indiana State", "UNC", "Duke",
-        "LSU", "Davidson", "UCLA", "Wake Forest", "Texas",
-        "Akron", "Dayton", "San Francisco", "Houston",
-        "Michigan State"
+          "California", "Colorado", "Connecticut", "Delaware", "Hawaii",
+          "Illinois", "Maine", "Maryland", "Massachusetts", "Michigan",
+          "Minnesota", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+          "New York", "Oregon", "Pennsylvania", "Rhode Island", "Vermont",
+          "Virginia", "Washington", "Wisconsin", "x", "x", "x"
       ]
-    },
-    "blue": {
-      "category_name": "25 Most Selective US Colleges",
+  },
+  "blue": {
+      "category_name": "States Originally Owned by Spain",
       "items": [
-        "Caltech", "Columbia", "Harvard", "MIT",
-        "Princeton", "Stanford", "Yale", "UChicago",
-        "Duke", "Brown", "Johns Hopkins", "Dartmouth",
-        "Penn", "Northwestern", "Cornell", "Vanderbilt",
-        "Rice", "WashU", "Notre Dame", "UC Berkeley",
-        "Carnegie Mellon", "USC", "UCLA", "Swarthmore",
-        "Amherst"
+          "Arizona", "California", "Colorado", "Florida", "Louisiana",
+          "Nevada", "New Mexico", "Texas", "Utah", "Wyoming", "Idaho", "Oregon", "Montana", "x", "x", "x"
       ]
-    }
   }
-  
+}
