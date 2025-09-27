@@ -1,13 +1,13 @@
 <div style="padding: 1.5rem; margin: 0px; width: 100%" class=" pt-2">
     <app-display id="display" *ngIf="displayView" [showEndMessage]="showEndMessage" [showInstructions]="showInstructions" [displayView]="displayView" (openDisplay)="toggleDisplay($event)"[found]="found" [missed]="missed" [userScore]="userScore" [par]="par"></app-display>
     <app-instruction-modal [isOpen]="isOpen" (onClose)="toggleModal($event)"></app-instruction-modal>
-    <app-navbar [userScore]="userScore" [shownPar]="shownPar" [par]="par" [isOpen]="isOpen" (onOpen)="toggleInstructionsDisplay($event)"></app-navbar>
+    <app-navbar [howPlayContent] = "howPlayContent" [userScore]="userScore" [shownPar]="shownPar" [par]="par" [displayView]="displayView" (onOpen)="toggleInstructionsDisplay($event)"></app-navbar>
     <div class="d-flex flex-column justify-content-center">
         <div class="pb-1" id="instructions-div">
             <app-end-message [displayView]="displayView" (openDisplay)="toggleEndMessageDisplay($event)" [userScore]="userScore" [par]="par"></app-end-message>
         </div>
         <div style="height: 100vh">
-        <div class="container diamond">
+        <div class="container diamond" id="diamond">
             <div class="row row-stretch">
                 <app-center class="hidden col d-flex flex-row-reverse"></app-center>
                 <div id="green" #green class="opaque-text cat col justify-content-center green">
@@ -72,10 +72,10 @@
         </div>
         <div id="text-field" class="p-4 flex-row justify-content-center fixed-bottom normal">
             <button class="m-2 undo btn btn-outline-dark normal" id="reveal-mobile" (click)="revealPar()">
-                Reveal Par
+                Reveal
             </button>
             <div id="reveal-btn">
-                <app-layered-btn [id]="'reveal-btn'" [used]="used" [content]="'Reveal Par'" (click)="revealPar()"></app-layered-btn>
+                <app-layered-btn [id]="'reveal-btn'" [used]="used" [content]="'Reveal'" (click)="revealPar()"></app-layered-btn>
             </div>
             <form (ngSubmit)="onSubmit()">
                 <div id="input" class="form-group mb-0 mt-2 justify-content-center normal sticky-bottom">

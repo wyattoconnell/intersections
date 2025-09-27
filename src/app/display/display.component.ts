@@ -34,7 +34,31 @@ export class DisplayComponent {
     return word.toLowerCase()
   }
 
-  getKeys(dictionary: { [key: string]: string[] }): string[] {
-    return Object.keys(dictionary);
-  }  
+  // getKeys(dictionary: { [key: string]: string[] }): string[] {
+
+  //   return Object.keys(dictionary);
+  // }  
+
+  getKeys(
+    dictionary: Record<string, string[]>
+  ): string[] {
+    const lexicographicCompare = (a: string[] = [], b: string[] = []) => {
+      const n = Math.min(a.length, b.length);
+      for (let i = 0; i < n; i++) {
+        const cmp = (a[i] ?? '').localeCompare(b[i] ?? '');
+        if (cmp !== 0) return cmp;           
+      }
+      return a.length - b.length;            
+    };
+  
+    return Object.keys(dictionary).sort((ka, kb) => {
+      const la = dictionary[ka]?.length ?? 0;
+      const lb = dictionary[kb]?.length ?? 0;
+  
+      if (la !== lb) return lb - la;        
+      return lexicographicCompare(dictionary[ka], dictionary[kb]); 
+    });
+  }
+  
+  
 }

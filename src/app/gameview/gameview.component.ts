@@ -50,6 +50,7 @@ export class GameviewComponent implements OnInit{
   userScore: number = 0;
   par: number = 0;
   shownPar: string = "?";
+  howPlayContent: string = "How Do I Play?";
   hit: boolean = false;
   isOpen: boolean = false;
   guesses: Array<string> = [];
@@ -90,6 +91,12 @@ export class GameviewComponent implements OnInit{
     const blue = document.getElementById('blue')!;
     const yellow = document.getElementById('yellow')!;
 
+    const diamond = document.getElementById('diamond');
+    if (diamond && window.innerWidth < 768){
+      diamond.style.width = "100%";
+      diamond.style.transition= "width 2000ms ease"; 
+    }
+
     setTimeout(() => {
       green.style.opacity = "100%";
       blue.style.opacity = "100%";
@@ -112,12 +119,24 @@ export class GameviewComponent implements OnInit{
     this.displayView = displayView;
     this.showEndMessage = false;
     this.showInstructions = true;
+    if (this.howPlayContent == "How Do I Play?"){
+      this.howPlayContent = "← Back";
+    }
+    else {
+      this.howPlayContent = "How Do I Play?";
+    }
   }
 
   toggleEndMessageDisplay(displayView: boolean) {
     this.displayView = displayView;
     this.showEndMessage = true;
     this.showInstructions = false;
+    if (this.howPlayContent == "How Do I Play?"){
+      this.howPlayContent = "← Back";
+    }
+    else {
+      this.howPlayContent = "How Do I Play?";
+    }
   }
 
   toggleDisplay(displayView: boolean) {

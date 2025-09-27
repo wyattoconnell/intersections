@@ -1,9 +1,25 @@
+
 .btn {
   border-radius: 20px;
 }
 
 #nav-container {
   z-index: 10000;
+}
+
+#button-container {
+  z-index: 10000;
+  position: absolute;
+  right: 0;
+  width: 100%;
+}
+
+#how-play-btn {
+  position: fixed;
+  box-sizing: border-box;
+  right: 8px;
+  margin-right: 10px;
+  top: 38px;
 }
 
 app-layered-btn {
@@ -105,7 +121,7 @@ app-layered-btn {
       font-style: normal;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 850px) {
       .logo {
         font-size: 22px;
       }
@@ -116,6 +132,10 @@ app-layered-btn {
 
       .sublogo {
         font-size: 18px;
+      }
+
+      #how-play-btn {
+        margin-right: 0px;
       }
     }
 

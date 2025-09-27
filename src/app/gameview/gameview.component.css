@@ -6,6 +6,7 @@
     left: 50%; 
     transform: translate(-50%, -55%); 
     overflow: visible;
+    transition: width 300ms ease; 
 }
 
 #display {
@@ -215,13 +216,13 @@ input {
   #reveal-btn {
     position: absolute; 
     top: 50%; left: 50%; 
-    transform: translate(-192px, 4px);
+    transform: translate(-191px, 4px);
   }
 
   #submit-btn {
     position: absolute; 
     top: 50%; left: 50%; 
-    transform: translate(205px, 4px);
+    transform: translate(188px, 4px);
   }
 
   #submitGuess {
@@ -263,15 +264,16 @@ input {
   #play-button{
     margin-bottom: 20px;
   }
+  
+  
+/* Mobile styles */
 
 @media (min-width: 768px) {
   #reveal-mobile, #submit-mobile {
     opacity: 0 !important;
   }
 }
-  
-  
-/* Mobile styles */
+
 @media (max-width: 768px) {
     .cat {
       min-height: 175px;
@@ -282,7 +284,7 @@ input {
         height: auto;
         position: absolute; 
         transform: translate(-50%, -55%); 
-        overflow-x: hidden; 
+        overflow-x: clip; 
     }
     #play-button{
       margin-bottom: 0px;

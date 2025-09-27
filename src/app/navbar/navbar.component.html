@@ -4,10 +4,10 @@
     <div>
       <h2 class="logo logo-padding">Intersections</h2>
       <h5 class="sublogo light logo-padding">Your Guesses: {{userScore}}</h5>
-      <h5 class="sublogo light logo-padding">Par: {{shownPar}}</h5>
+      <h5 *ngIf="animate()" id="perfect-score" class="sublogo light logo-padding">Perfect: {{shownPar}}</h5>
     </div>
   </div>
 </div>
-<div class="pt-4 mx-2 px-3 px-sm-3 px-md-4 d-flex justify-content-end">
-  <app-layered-btn [id]="'how-play'" [content]="'How Do I Play?'" (click)="openModal()" class="position-fixed" id="how-play-btn"></app-layered-btn>
+<div *ngIf="viewTrue()" id="button-container" class="pt-4 mx-2 px-3 px-sm-3 px-md-4 d-flex justify-content-end">
+  <app-layered-btn [id]="'how-play'" [content]="howPlayContent" (click)="openModal()" class="position-fixed" id="how-play-btn"></app-layered-btn>
 </div>
