@@ -28,7 +28,7 @@ export class EndMessageComponent {
   }
 
   copyResults() {
-    let message: string = "I finished today's Intersections with a score of " + (this.userScore - this.par) + " over par! Try to beat me at https://intersections.in/";
+    let message: string = "I finished today's Intersections with a score of " + (this.userScore - this.par) + " from perfect! Try to beat me at https://intersections.in/";
     this.clipboard.copy(message);
     this.showModal();
   }

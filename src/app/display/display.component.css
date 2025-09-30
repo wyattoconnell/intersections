@@ -129,6 +129,14 @@
     font-style: normal;
 }
 
+.small {
+  font-family: "Comfortaa", serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+  font-size: smaller;
+}
+
 #back-to-game-btn {
     position: absolute;
     top: 0%;

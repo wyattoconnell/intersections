@@ -48,8 +48,10 @@ export class NavbarComponent {
       const origSize = cs.fontSize;
       el.style.transition = 'font-size 1s ease, font-weight 1s ease';
   
-      el.style.fontWeight = '700'; // or 'bold'
-      el.style.fontSize = `${parseFloat(origSize) * 1.08}px`; // ~8% bump
+      el.style.fontWeight = '800'; 
+      if (window.innerWidth > 768) {
+        el.style.fontSize = `${parseFloat(origSize) * 1.08}px`; 
+      }
       setTimeout(() => {
         el.style.fontWeight = origWeight as any;
         el.style.fontSize = origSize;

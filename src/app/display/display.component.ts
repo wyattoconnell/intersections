@@ -16,6 +16,7 @@ export class DisplayComponent {
   };  
 
   @Input() userScore = 0;
+  @Input() source = "";
   @Input() par = 0;
   @Input() found:  { [key: string]: string[] } = {};
   @Input() missed:  { [key: string]: string[] } = {};

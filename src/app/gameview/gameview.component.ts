@@ -6,12 +6,14 @@ import { InstructionModalComponent } from '../instruction-modal/instruction-moda
 import { DisplayComponent } from '../display/display.component';
 import { LayeredBtnComponent } from '../layered-btn/layered-btn.component';
 import { EndMessageComponent } from '../end-message/end-message.component';
+import { PlayState, loadPlayState, savePlayState, clearPlayState, pruneOldStates } from '../play-state.store';
 
 @Component({
   selector: 'app-gameview',
   templateUrl: './gameview.component.html',
   styleUrl: './gameview.component.css',
 })
+
 export class GameviewComponent implements OnInit{
 
   @ViewChild('blue') blue!: ElementRef<HTMLDivElement>;
@@ -46,6 +48,9 @@ export class GameviewComponent implements OnInit{
   };
 
   data: any;
+  gameDate: string = "2003-05-29";
+  source: string = "www.testsource.com";
+  gameId: number = 0;
   innerText: string = "";
   userScore: number = 0;
   par: number = 0;
@@ -67,16 +72,31 @@ export class GameviewComponent implements OnInit{
   constructor(private dataService: DataService, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
 
   ngOnInit(): void {
-    this.dataService.getData().subscribe(data => {
-      this.data = data;
 
-      //calculate minScore
-      let res = this.itemSelector.selectEfficientItems(this.data);
-      this.answers = res.selectedItems; 
-      this.intersections = res.intersections;  
-      this.missed = this.intersections;
-      this.par = this.answers.length;
-    });
+    this.dataService.getData().subscribe(data => { this.data = data;
+
+    this.initOrHydrate(this.gameDate);
+    
+    let res = this.itemSelector.selectEfficientItems(this.data); 
+    this.answers = res.selectedItems; 
+    this.intersections = res.intersections; 
+    this.missed = this.intersections; 
+    this.par = this.answers.length; });
+
+    // this.dataService.getGameToday().subscribe(game => {
+    //   this.gameDate = game.game_date;
+    //   this.source = game.source;
+    //   this.data = game.content;
+    // this.initOrHydrate(this.gameDate);
+    
+    //   const res = this.itemSelector.selectEfficientItems(this.data);
+    //   this.answers = res.selectedItems;
+    //   this.intersections = res.intersections;
+    //   this.missed = this.intersections;
+    //   this.par = this.answers.length;
+    // });
+
+    this.saveCurrentState();
 
     setTimeout(() => {
       let mag = -200;
@@ -233,6 +253,7 @@ export class GameviewComponent implements OnInit{
         list[2] = list[1];
         list[1] = list[0];
         list[0] = guess;
+        this.saveCurrentState();
         if (this.checkEnd()) {
           this.gameover = true;
           this.endGame();
@@ -240,7 +261,6 @@ export class GameviewComponent implements OnInit{
         setTimeout(() => {
           if (list[2] !== "" && !this.gameover) {cat.style.opacity = '20%';}
         }, 2250);
-
         //if an intersection, update variables
         for (const key of Object.keys(this.intersections)) {
           if (key.toLowerCase() === guess) {
@@ -249,7 +269,7 @@ export class GameviewComponent implements OnInit{
             if (key in this.missed) {
               delete this.missed[key];
             }
-
+            this.saveCurrentState();
             break; 
           }
         }
@@ -261,6 +281,7 @@ export class GameviewComponent implements OnInit{
     for (const list of Object.values(this.colorMap)) {
       if (list[2] == "") {return false;}
     }
+    this.saveCurrentState();
     return true;
   }
 
@@ -308,49 +329,52 @@ export class GameviewComponent implements OnInit{
       this.select(this.red.nativeElement, 'x', -120, "100", this.redtext.nativeElement, this.redGuesses.nativeElement);
     }
   }
+
+private initOrHydrate(dateYmd: string) {
+  const existing = loadPlayState(dateYmd);
+  if (existing) {
+    this.guesses = existing.guesses ?? [];
+    this.answers = existing.answers ?? [];
+    this.intersections = existing.intersections ?? {};
+    this.found = existing.found ?? {};
+    this.missed = existing.missed ?? {};
+    this.gameover = !!existing.gameover;
+  } else {
+    // fresh state for the day
+    this.guesses = [];
+    this.answers = [];
+    this.intersections = {};
+    this.found = {};
+    this.missed = {};
+    this.gameover = false;
+
+    savePlayState(dateYmd, {
+      guesses: this.guesses,
+      answers: this.answers,
+      intersections: this.intersections,
+      found: this.found,
+      missed: this.missed,
+      gameover: this.gameover,
+      startedAt: new Date().toISOString(),
+      lastSavedAt: new Date().toISOString()
+    });
+  }
+  pruneOldStates(30); // optional tidy
+}
+
+private saveCurrentState() {
+  if (!this.gameDate) return;
+  savePlayState(this.gameDate, {
+    guesses: this.guesses,
+    answers: this.answers,
+    intersections: this.intersections,
+    found: this.found,
+    missed: this.missed,
+    gameover: this.gameover,
+    startedAt: loadPlayState(this.gameDate)?.startedAt ?? new Date().toISOString(),
+    lastSavedAt: new Date().toISOString()
+  });
 }
 
 
-
-  // clear() {
-  //   this.yellowList = ["", "", ""];
-  //   this.greenList = ["", "", ""];
-  //   this.blueList = ["", "", ""];
-  //   this.redList = ["", "", ""];
-  //   this.userScore = 0;
-  //   this.guesses = [];
-
-  //   const green = document.getElementById('green')!;
-  //   const red = document.getElementById('red')!;
-  //   const blue = document.getElementById('blue')!;
-  //   const yellow = document.getElementById('yellow')!;
-  //   green.style.opacity = "100%";
-  //   blue.style.opacity = "100%";
-  //   yellow.style.opacity = "100%";
-  //   red.style.opacity = "100%";
-  // }
-
-  // undo() {
-  //   if (this.userScore == 0) {
-  //     return;
-  //   }
-  //   let prev = this.guesses[(this.guesses.length - 1)];
-  //   for (let color in this.colorMap) {
-  //     if (this.colorMap.hasOwnProperty(color)) {
-  //       let list = this.colorMap[color];
-  //       for (let item of list) {
-  //         if (item === prev) {
-  //           list[0] = list[1];
-  //           list[1] = list[2];
-  //           if (list[2] != "") {
-  //             const cat = document.getElementById(color)!;
-  //             cat.style.opacity = "100%";
-  //           }
-  //           list[2] = "";
-  //         }
-  //       }
-  //     }
-  //   }
-  //   this.userScore -= 1;
-  //   this.guesses.pop();
-  // }
+}

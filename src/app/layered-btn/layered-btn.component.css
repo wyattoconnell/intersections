@@ -104,4 +104,16 @@
     .layer-effect {
       font-size: 14px;
     }
+    .layer1 {
+      display: none;
+    }
+    .layer2 {
+      display: none;
+    }
+    .layer3 {
+      display: none;
+    }
+    .layer4 {
+      display: none;
+    }
   }
