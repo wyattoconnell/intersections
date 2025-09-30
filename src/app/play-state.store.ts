@@ -8,6 +8,7 @@ export interface PlayState {
   found: StringArrayMap;
   missed: StringArrayMap;
   gameover: boolean;
+  used: boolean;
   startedAt: string;   // ISO timestamp
   lastSavedAt: string; // ISO timestamp
 }

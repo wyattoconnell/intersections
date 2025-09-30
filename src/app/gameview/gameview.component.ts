@@ -72,16 +72,39 @@ export class GameviewComponent implements OnInit{
   constructor(private dataService: DataService, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
 
   ngOnInit(): void {
+    this.initOrHydrate(this.gameDate);
 
     this.dataService.getData().subscribe(data => { this.data = data;
-
-    this.initOrHydrate(this.gameDate);
-    
     let res = this.itemSelector.selectEfficientItems(this.data); 
-    this.answers = res.selectedItems; 
-    this.intersections = res.intersections; 
-    this.missed = this.intersections; 
-    this.par = this.answers.length; });
+    if (this.guesses.length == 0) {
+      this.answers = res.selectedItems; 
+      this.intersections = res.intersections; 
+      this.missed = this.intersections;
+    } 
+    else {
+      for (const guess of this.guesses) {
+        this.checkGuess('green',  guess);
+        const greenlist = this.colorMap['green'];
+        const greencat = document.getElementById('green')!;
+        if (greenlist[2] !== "" && !this.gameover) {greencat.style.opacity = '20%';}
+        this.checkGuess('red',    guess);
+        const redlist = this.colorMap['red'];
+        const redcat = document.getElementById('red')!;
+        if (redlist[2] !== "" && !this.gameover) {redcat.style.opacity = '20%';}
+        this.checkGuess('yellow', guess);
+        const yellowlist = this.colorMap['yellow'];
+        const yellowcat = document.getElementById('yellow')!;
+        if (yellowlist[2] !== "" && !this.gameover) {yellowcat.style.opacity = '20%';}
+        this.checkGuess('blue',   guess); 
+        const bluelist = this.colorMap['blue'];
+        const bluecat = document.getElementById('blue')!;
+        if (bluelist[2] !== "" && !this.gameover) {bluecat.style.opacity = '20%';}   
+      }
+    }
+    this.par = this.answers.length; 
+    this.saveCurrentState();
+    });
+  
 
     // this.dataService.getGameToday().subscribe(game => {
     //   this.gameDate = game.game_date;
@@ -96,8 +119,6 @@ export class GameviewComponent implements OnInit{
     //   this.par = this.answers.length;
     // });
 
-    this.saveCurrentState();
-
     setTimeout(() => {
       let mag = -200;
       this.contract(mag);
@@ -110,12 +131,6 @@ export class GameviewComponent implements OnInit{
     const red = document.getElementById('red')!;
     const blue = document.getElementById('blue')!;
     const yellow = document.getElementById('yellow')!;
-
-    const diamond = document.getElementById('diamond');
-    if (diamond && window.innerWidth < 768){
-      diamond.style.width = "100%";
-      diamond.style.transition= "width 2000ms ease"; 
-    }
 
     setTimeout(() => {
       green.style.opacity = "100%";
@@ -131,8 +146,8 @@ export class GameviewComponent implements OnInit{
         playButton.style.display = 'none';
     }
     this.toggleTextField("open");
-    this.expand();
-    //this.expandAtEnd();
+    if (this.gameover) {this.expandAtEnd();}
+    else {this.expand() };
   }
 
   toggleInstructionsDisplay(displayView: boolean) {
@@ -183,11 +198,13 @@ export class GameviewComponent implements OnInit{
 
   revealPar() {
     this.used = true;
+    this.par = this.answers.length;
     this.shownPar = this.par.toString();
     let target = document.getElementById("reveal-mobile");
     if (target) {
       target.style.setProperty("opacity", "0.3");
     }
+    this.saveCurrentState();
   }
 
   select(div: HTMLDivElement, axis: 'x' | 'y', mag: number, opac: string, text: HTMLElement, guesses: HTMLDivElement) {
@@ -220,6 +237,7 @@ export class GameviewComponent implements OnInit{
         setTimeout(() => this.innerText = "", 500);
         setTimeout(() => this.userScore += 1, 500);
       }
+      this.saveCurrentState();
     }, 200);
   }
 
@@ -307,6 +325,12 @@ export class GameviewComponent implements OnInit{
 
   expandAtEnd() {
     this.toggleTextField("close");
+    this.revealPar();
+    const diamond = document.getElementById('diamond');
+    if (diamond && window.innerWidth < 768){
+      diamond.style.width = "100%";
+      diamond.style.transition= "width 2000ms ease"; 
+    }
     setTimeout(() => {
       const div = document.getElementById("instructions-div");
       if (div) {
@@ -333,14 +357,19 @@ export class GameviewComponent implements OnInit{
 private initOrHydrate(dateYmd: string) {
   const existing = loadPlayState(dateYmd);
   if (existing) {
+    //console.log("found exisiting state...");
     this.guesses = existing.guesses ?? [];
+    this.userScore = this.guesses.length;
+    this.used = existing.used;
     this.answers = existing.answers ?? [];
+    if (this.used) {this.revealPar()};
     this.intersections = existing.intersections ?? {};
     this.found = existing.found ?? {};
     this.missed = existing.missed ?? {};
     this.gameover = !!existing.gameover;
   } else {
     // fresh state for the day
+    //console.log("initializing game state..");
     this.guesses = [];
     this.answers = [];
     this.intersections = {};
@@ -355,6 +384,7 @@ private initOrHydrate(dateYmd: string) {
       found: this.found,
       missed: this.missed,
       gameover: this.gameover,
+      used: this.used,
       startedAt: new Date().toISOString(),
       lastSavedAt: new Date().toISOString()
     });
@@ -371,6 +401,7 @@ private saveCurrentState() {
     found: this.found,
     missed: this.missed,
     gameover: this.gameover,
+    used: this.used,
     startedAt: loadPlayState(this.gameDate)?.startedAt ?? new Date().toISOString(),
     lastSavedAt: new Date().toISOString()
   });
