@@ -1,3 +1,32 @@
+.date-card {
+  padding: 12px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,0,0);
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  cursor: pointer;
+  user-select: none;
+}
+.date-card:focus,
+.date-card:hover { color:rgb(250, 250, 250); background-color: black; }
+.date-main { font-weight: 300; display:block; }
+.date-sub { opacity: .7; font-size: .9rem; margin-top: 2px; }
+
+
+/* Hide scrollbar but keep scrollability */
+.hide-scrollbar {
+  overflow: auto;                 /* or overflow-y: auto */
+  -ms-overflow-style: none;       /* IE 10+ / old Edge */
+  scrollbar-width: none;          /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari/Chromium Edge */
+}
+
+/* (Optional) smoother scrolling on iOS */
+.hide-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
 #display-div {
     display: flex;
     justify-content: center;
@@ -190,6 +219,10 @@
   
 
 @media (max-width: 768px) {
+
+  .date-card {
+    margin-bottom: 10px;
+  }
 
     #back-to-game-btn {
         transform: translate(0px, calc(40vh + 445px));

@@ -67,7 +67,9 @@ export class GameviewComponent implements OnInit{
   displayView: boolean = false;
   showEndMessage: boolean = false;
   showInstructions: boolean = true;
+  showArchive: boolean = true;
   used: boolean = false;
+  gameDates: string[] = ["2025-09-29", "2025-09-28", "2025-09-27", "2025-09-26", "2025-09-25"];
 
   constructor(private dataService: DataService, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
 
@@ -153,8 +155,22 @@ export class GameviewComponent implements OnInit{
   toggleInstructionsDisplay(displayView: boolean) {
     this.displayView = displayView;
     this.showEndMessage = false;
+    this.showArchive = false;
     this.showInstructions = true;
     if (this.howPlayContent == "How Do I Play?"){
+      this.howPlayContent = "← Back";
+    }
+    else {
+      this.howPlayContent = "How Do I Play?";
+    }
+  }
+
+  toggleArchiveDisplay(displayView: boolean) {
+    this.displayView = displayView;
+    this.showEndMessage = false;
+    this.showInstructions = false;
+    this.showArchive = true;
+    if (displayView){
       this.howPlayContent = "← Back";
     }
     else {
@@ -166,6 +182,7 @@ export class GameviewComponent implements OnInit{
     this.displayView = displayView;
     this.showEndMessage = true;
     this.showInstructions = false;
+    this.showArchive = false;
     if (this.howPlayContent == "How Do I Play?"){
       this.howPlayContent = "← Back";
     }

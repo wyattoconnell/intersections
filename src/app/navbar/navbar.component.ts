@@ -13,7 +13,9 @@ export class NavbarComponent {
   @Input() shownPar: string = "?";
   @Input() displayView: boolean = false;
   @Input() howPlayContent: string = "How Do I Play?";
+  @Input() archiveContent: string = "Archive";
   @Output() onOpen = new EventEmitter<boolean>();
+  @Output() openArch = new EventEmitter<boolean>();
 
   revealed = false;
 
@@ -22,17 +24,21 @@ export class NavbarComponent {
     this.onOpen.emit(this.displayView);
   }
 
+  openArchiveModal() {
+    this.displayView = true;
+    this.openArch.emit(this.displayView);
+  }
+
   viewTrue() {
-    if (this.displayView == true) {
-      const btn = document.getElementById("how-play-btn");
-      if (btn) {
-        btn.style.right = "38px";
+    const btn = document.getElementById("archive-btn");
+    if (btn) {
+      if (this.displayView == true ) {
+        btn.classList.remove('size-adjust');
+        btn.style.right = "17px";
+        btn.style.top = "34px";
       }
-    }
-    else {
-      const btn = document.getElementById("how-play-btn");
-      if (btn) {
-        btn.style.right = "53px";
+      else if (this.displayView == false) {
+        btn.classList.add('size-adjust');
       }
     }
     return true;

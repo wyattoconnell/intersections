@@ -9,5 +9,6 @@
   </div>
 </div>
 <div *ngIf="viewTrue()" id="button-container" class="pt-4 mx-2 px-3 px-sm-3 px-md-4 d-flex justify-content-end">
-  <app-layered-btn [id]="'how-play'" [content]="howPlayContent" (click)="openModal()" class="position-fixed" id="how-play-btn"></app-layered-btn>
+  <app-layered-btn [id]="'how-play'" [content]="howPlayContent" (click)="openModal()" class="size-adjust position-fixed" id="archive-btn"></app-layered-btn>
+  <app-layered-btn [id]="'archive'" [content]="archiveContent" (click)="openArchiveModal()" class="position-fixed" id="archive-btn"></app-layered-btn>
 </div>

@@ -6,8 +6,30 @@
     </div> -->
     <h2 *ngIf="showEndMessage" class="bold title half centered-text pt-3 pt-m-0 mt-lg-0">{{userScore-par}} Above Par</h2>
     <h2 *ngIf="showInstructions" id="instructions-title" class="bold title half centered-text pb-4">How To Play</h2>
+    <h2 *ngIf="showArchive" id="archive-title" class="bold title half centered-text pb-4">Archive</h2>
+    
 
-    <div id="details" class="display-backdrop d-flex justify-content-center">
+    <div id="details" class="display-backdrop d-flex justify-content-center hide-scrollbar">
+    
+    <!-- Archive -->
+    <div *ngIf="showArchive">
+        <p class="bold half pb-3 pt-3 normal text-center">Have an idea for a future puzzle? <a href="mailto:admin@intersections.in">Let me know!</a>
+        </p>
+        <div class="two-column-grid half pb-3 normal">
+                <div
+                  *ngFor="let d of gameDates; trackBy: trackByDate"
+                  class="date-card"
+                  (click)="loadDate(d)"
+                  role="button"
+                  tabindex="0"
+                >
+                  <time [attr.datetime]="d" class="date-main">
+                    {{ toLocalDate(d) | date:'EEEE, MMM d, y' }}
+                  </time>
+                </div>
+              
+        </div>
+    </div>
     
     <!-- End Message -->
     <div *ngIf="showEndMessage" id="end-message-content">

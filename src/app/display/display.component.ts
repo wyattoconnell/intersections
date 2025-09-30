@@ -22,7 +22,9 @@ export class DisplayComponent {
   @Input() missed:  { [key: string]: string[] } = {};
   @Input() displayView = false;
   @Input() showEndMessage = false;
-  @Input() showInstructions = true;
+  @Input() showInstructions = false;
+  @Input() showArchive = true;
+  @Input() gameDates: string[] = [];
   @Output() openDisplay = new EventEmitter<boolean>();
 
 
@@ -33,6 +35,17 @@ export class DisplayComponent {
 
   toLowerCase(word: string) {
     return word.toLowerCase()
+  }
+
+  toLocalDate = (ymd: string): Date => {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(y, m - 1, d); 
+  };
+  
+  trackByDate = (_: number, d: string) => d;
+  
+  loadDate(d: string) {
+    // this.dataService.getGameByDate(d).subscribe(...)
   }
 
   // getKeys(dictionary: { [key: string]: string[] }): string[] {
