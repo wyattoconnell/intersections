@@ -1,5 +1,5 @@
 <div style="padding: 1.5rem; margin: 0px; width: 100%" class=" pt-2">
-    <app-display id="display" *ngIf="displayView" [showEndMessage]="showEndMessage" [showInstructions]="showInstructions" [showArchive]="showArchive" [displayView]="displayView" (openDisplay)="toggleDisplay($event)"[gameDates]="gameDates" [found]="found" [missed]="missed" [userScore]="userScore" [source]="source" [par]="par"></app-display>
+    <app-display id="display" *ngIf="displayView" [showEndMessage]="showEndMessage" [showInstructions]="showInstructions" [showArchive]="showArchive" [displayView]="displayView" [day]="day" (loadDay)="loadArchivedDay($event)" (openDisplay)="toggleDisplay($event)"[gameDates]="gameDates" [found]="found" [missed]="missed" [userScore]="userScore" [source]="source" [par]="par"></app-display>
     <app-instruction-modal [isOpen]="isOpen" (onClose)="toggleModal($event)"></app-instruction-modal>
     <app-navbar [howPlayContent] = "howPlayContent" [userScore]="userScore" [shownPar]="shownPar" [par]="par" [displayView]="displayView" (onOpen)="toggleInstructionsDisplay($event)" (openArch)="toggleArchiveDisplay($event)"></app-navbar>
     <div class="d-flex flex-column justify-content-center">

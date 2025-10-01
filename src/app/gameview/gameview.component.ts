@@ -48,7 +48,7 @@ export class GameviewComponent implements OnInit{
   };
 
   data: any;
-  gameDate: string = "2003-05-29";
+  gameDate: string = "";
   source: string = "www.testsource.com";
   gameId: number = 0;
   innerText: string = "";
@@ -69,15 +69,24 @@ export class GameviewComponent implements OnInit{
   showInstructions: boolean = true;
   showArchive: boolean = true;
   used: boolean = false;
-  gameDates: string[] = ["2025-09-29", "2025-09-28", "2025-09-27", "2025-09-26", "2025-09-25"];
+  gameDates: string[] = [];
+  day: string = ymdInTZ();
+  today: string = ymdInTZ();
+
 
   constructor(private dataService: DataService, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
 
   ngOnInit(): void {
-    this.initOrHydrate(this.gameDate);
 
-    this.dataService.getData().subscribe(data => { this.data = data;
-    let res = this.itemSelector.selectEfficientItems(this.data); 
+    // this.dataService.getData().subscribe(data => { this.data = data;
+    // let res = this.itemSelector.selectEfficientItems(this.data); 
+  this.day = this.today;
+  this.dataService.getGameByDate(this.day).subscribe(game => {
+    this.gameDate = game.game_date;
+    this.source = game.source;
+    this.data = game.content;
+    this.initOrHydrate(this.gameDate);
+    const res = this.itemSelector.selectEfficientItems(this.data);
     if (this.guesses.length == 0) {
       this.answers = res.selectedItems; 
       this.intersections = res.intersections; 
@@ -105,6 +114,10 @@ export class GameviewComponent implements OnInit{
     }
     this.par = this.answers.length; 
     this.saveCurrentState();
+    });
+
+    this.dataService.getAllGameDates().subscribe(dates => {
+      this.gameDates = dates; 
     });
   
 
@@ -213,6 +226,57 @@ export class GameviewComponent implements OnInit{
     }
   }
 
+  loadArchivedDay(ymd: string) {
+    this.dataService.getGameByDate(ymd).subscribe(game => {
+      this.gameDate = game.game_date;
+      this.source = game.source;
+      this.data = game.content;
+      this.initOrHydrate(this.gameDate);
+      this.saveCurrentState();
+      const res = this.itemSelector.selectEfficientItems(this.data);
+      this.answers = res.selectedItems; 
+      this.intersections = res.intersections; 
+      this.missed = this.intersections;
+      this.par = this.answers.length; 
+      const bluelist = this.colorMap['blue'];
+      const greenlist = this.colorMap['green'];
+      const yellowlist = this.colorMap['yellow'];
+      const redlist = this.colorMap['red'];
+        for (let i = 0; i < bluelist.length; i++) {
+          bluelist[i]="";
+          greenlist[i]="";
+          yellowlist[i]="";
+          redlist[i]="";
+        }
+      for (const guess of this.guesses) {
+        this.checkGuess('green',  guess);
+        const greenlist = this.colorMap['green'];
+        const greencat = document.getElementById('green')!;
+        if (greenlist[2] !== "" && !this.gameover) {greencat.style.opacity = '20%';}
+        this.checkGuess('red',    guess);
+        const redlist = this.colorMap['red'];
+        const redcat = document.getElementById('red')!;
+        if (redlist[2] !== "" && !this.gameover) {redcat.style.opacity = '20%';}
+        this.checkGuess('yellow', guess);
+        const yellowlist = this.colorMap['yellow'];
+        const yellowcat = document.getElementById('yellow')!;
+        if (yellowlist[2] !== "" && !this.gameover) {yellowcat.style.opacity = '20%';}
+        this.checkGuess('blue',   guess); 
+        const bluelist = this.colorMap['blue'];
+        const bluecat = document.getElementById('blue')!;
+        if (bluelist[2] !== "" && !this.gameover) {bluecat.style.opacity = '20%';}   
+        this.saveCurrentState();
+      };
+      });   
+      if (this.howPlayContent == "How Do I Play?"){
+        this.howPlayContent = "← Back";
+      }
+      else {
+        this.howPlayContent = "How Do I Play?";
+      }
+      
+  }
+
   revealPar() {
     this.used = true;
     this.par = this.answers.length;
@@ -220,6 +284,16 @@ export class GameviewComponent implements OnInit{
     let target = document.getElementById("reveal-mobile");
     if (target) {
       target.style.setProperty("opacity", "0.3");
+    }
+    this.saveCurrentState();
+  }
+
+  unrevealPar() {
+    this.used = false;
+    this.shownPar = "?";
+    let target = document.getElementById("reveal-mobile");
+    if (target) {
+      target.style.setProperty("opacity", "1.0");
     }
     this.saveCurrentState();
   }
@@ -236,6 +310,9 @@ export class GameviewComponent implements OnInit{
   }
 
   onSubmit() {
+    const guess = this.innerText.toLowerCase();
+    this.guesses.push(guess);
+    this.saveCurrentState();
     setTimeout(() => {
       const guess = this.innerText.toLowerCase(); 
       this.checkGuess('green', guess);
@@ -243,7 +320,6 @@ export class GameviewComponent implements OnInit{
       this.checkGuess('yellow', guess);
       this.checkGuess('blue', guess);
       if (this.hit) {
-        this.guesses.push(guess);
         setTimeout(() => {this.router(-200);}, 0);
         setTimeout(() => this.userScore += 1, 2200);
         setTimeout(() => this.innerText = "", 2250);
@@ -380,6 +456,7 @@ private initOrHydrate(dateYmd: string) {
     this.used = existing.used;
     this.answers = existing.answers ?? [];
     if (this.used) {this.revealPar()};
+    if (!this.used) {this.unrevealPar()};
     this.intersections = existing.intersections ?? {};
     this.found = existing.found ?? {};
     this.missed = existing.missed ?? {};
@@ -423,6 +500,21 @@ private saveCurrentState() {
     lastSavedAt: new Date().toISOString()
   });
 }
+}
 
+export function ymdInTZ(
+  date: Date = new Date(),
+  timeZone: string = 'America/Los_Angeles'
+): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
 
+  const y = parts.find(p => p.type === 'year')!.value;
+  const m = parts.find(p => p.type === 'month')!.value;
+  const d = parts.find(p => p.type === 'day')!.value;
+  return `${y}-${m}-${d}`; // e.g., '2025-09-30'
 }

@@ -25,8 +25,16 @@ export class DisplayComponent {
   @Input() showInstructions = false;
   @Input() showArchive = true;
   @Input() gameDates: string[] = [];
+  @Input() day: string= "";
   @Output() openDisplay = new EventEmitter<boolean>();
+  @Output() loadDay = new EventEmitter<string>();
 
+  loadArchivedDay(day: string) {
+    this.day = day;
+    this.displayView = !this.displayView;
+    this.loadDay.emit(this.day);
+    this.openDisplay.emit(this.displayView);
+  }
 
   toggleDisplay() {
     this.displayView = !this.displayView;
@@ -43,15 +51,7 @@ export class DisplayComponent {
   };
   
   trackByDate = (_: number, d: string) => d;
-  
-  loadDate(d: string) {
-    // this.dataService.getGameByDate(d).subscribe(...)
-  }
-
-  // getKeys(dictionary: { [key: string]: string[] }): string[] {
-
-  //   return Object.keys(dictionary);
-  // }  
+   
 
   getKeys(
     dictionary: Record<string, string[]>

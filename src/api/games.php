@@ -14,18 +14,16 @@ declare(strict_types=1);
  * If your Angular app is on the SAME origin as this API, you can leave $ALLOWED_ORIGIN = null.
  * If it’s on a different origin (e.g., https://app.your-domain.com), set it below.
  */
-$ALLOWED_ORIGIN = null; // e.g. 'https://app.your-domain.com'; keep null if same origin
+$ALLOWED_ORIGINS = ['http://localhost:4200', 'https://intersections.in/#/'];
 
-if ($ALLOWED_ORIGIN && isset($_SERVER['HTTP_ORIGIN']) && $_SERVER['HTTP_ORIGIN'] === $ALLOWED_ORIGIN) {
-  header('Access-Control-Allow-Origin: ' . $ALLOWED_ORIGIN);
+$origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+if ($origin && in_array($origin, $ALLOWED_ORIGINS, true)) {
+  header('Access-Control-Allow-Origin: ' . $origin);
   header('Vary: Origin');
   header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  header('Access-Control-Allow-Headers: Content-Type, Authorization');
+  header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 }
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 /* ---------- (1) Always JSON ---------- */
 header('Content-Type: application/json');
@@ -59,7 +57,7 @@ function decode_json_or_raw($value) {
 }
 
 /* ---------- (4) DB config (move these to a secure include for prod) ---------- */
-$host = 'localhost';                           // use localhost on Hostinger shared
+$host = 'localhost';
 $db   = 'u816953022_intersect_db';             // full prefixed DB name
 $user = 'u816953022_wyattmoconnell';           // full prefixed DB user
 $pass = '25Jagra8';                          // rotate if exposed, keep out of repo
@@ -116,12 +114,31 @@ try {
       $r['content'] = decode_json_or_raw($r['content']);
       $rows[] = $r;
     }
-    send_ok($row);
+    send_ok($rows);
   }
 
   // Default: returns puzzle for that day
   date_default_timezone_set('America/Los_Angeles'); // pick your TZ
   $today = date('Y-m-d');
+
+  // ?dates=1 -> return all game_date strings up to today, newest first
+  $dates = q('dates');
+  if ($dates !== null && $dates !== '') {
+    $stmt = $conn->prepare("
+      SELECT DISTINCT DATE_FORMAT(game_date, '%Y-%m-%d') AS game_date
+      FROM games
+      WHERE game_date <= ?
+      ORDER BY game_date DESC
+      LIMIT 365
+    ");
+    $stmt->bind_param('s', $today);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    $out = [];
+    while ($r = $res->fetch_assoc()) { $out[] = $r['game_date']; }
+    send_ok($out); // { data: ["2025-09-30","2025-09-29", ...] }
+  }
   
   $stmt = $conn->prepare(
     "SELECT id, game_date, content, source
