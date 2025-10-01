@@ -1,6 +1,6 @@
 import { Component, ViewChild, ElementRef, OnInit, Renderer2 } from '@angular/core';
 import { ROUTER_INITIALIZER } from '@angular/router';
-import { DataService } from '../data.service';
+import { DataService, DataSaver } from '../data.service';
 import { ItemSelectorService } from '../item-selector.service';
 import { InstructionModalComponent } from '../instruction-modal/instruction-modal.component';
 import { DisplayComponent } from '../display/display.component';
@@ -16,6 +16,7 @@ import { NavbarComponent } from '../navbar/navbar.component';
 })
 
 export class GameviewComponent implements OnInit{
+
   @ViewChild(NavbarComponent) child!: NavbarComponent;
   @ViewChild('blue') blue!: ElementRef<HTMLDivElement>;
   @ViewChild('red') red!: ElementRef<HTMLDivElement>;
@@ -75,7 +76,7 @@ export class GameviewComponent implements OnInit{
   today: string = ymdInTZ();
 
 
-  constructor(private dataService: DataService, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
+  constructor(private dataService: DataService, private dataSaver: DataSaver, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
 
   ngOnInit(): void {
 
@@ -370,7 +371,20 @@ export class GameviewComponent implements OnInit{
         this.saveCurrentState();
         if (this.checkEnd()) {
           this.gameover = true;
-          this.endGame();
+          this.dataSaver.savePlayState("", this.gameDate, {
+            guesses: this.guesses,
+            answers: this.answers,
+            intersections: this.intersections,
+            found: this.found,
+            missed: this.missed,
+            gameover: this.gameover,
+            used: this.used,
+            startedAt: loadPlayState(this.gameDate)?.startedAt ?? new Date().toISOString(),
+            lastSavedAt: new Date().toISOString()
+          }).subscribe({
+            next: (res) => this.endGame(),
+            error: (err) => console.error('Save failed', err)
+          });
         }
         setTimeout(() => {
           if (list[2] !== "" && !this.gameover) {cat.style.opacity = '20%';}

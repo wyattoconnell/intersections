@@ -150,6 +150,10 @@ app-layered-btn {
         top: 34px !important;
       }
 
+      #archive-btn {
+        top: 78px;
+      }
+
     }
 
     @media (min-width: 768px) {
@@ -157,6 +161,10 @@ app-layered-btn {
       .size-adjust {
         right: 47px !important;
         top: 34px !important;
+      }
+
+      #archive-btn {
+        top: 82px;
       }
 
     }

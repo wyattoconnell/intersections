@@ -4,8 +4,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../environments/environment';
+import { PlayState} from './play-state.store';
 
 type ApiOk<T> = { data: T };
+export type ApiErr = { error: string };
 
 export interface Game {
   id: number;
@@ -91,4 +93,50 @@ export class DataService {
         .pipe(map(res => (res.data?.[0] as Game)));
     }
   }
+}
+
+@Injectable({ providedIn: 'root' })
+export class DataSaver {
+  private apiBase = environment.apiBaseUrl; 
+
+  constructor(private http: HttpClient) {}
+
+  savePlayState(userKey: string, gameDate: string, state: PlayState) {
+    userKey = getOrCreateUserKey();
+    return this.http.post(`${environment.apiBaseUrl}/game_data.php?_method=PUT`, {
+      user_key: userKey,
+      game_date: gameDate,
+      state,
+      started_at: state.startedAt ?? null,
+      last_saved_at: state.lastSavedAt ?? null
+    }, {
+      headers: { 'X-HTTP-Method-Override': 'PUT' }
+    });
+  }
+  
+  loadPlayState(userKey: string, gameDate: string) {
+    return this.http.get<{data:any}>(`${environment.apiBaseUrl}/game_data.php`, {
+      params: { user_key: userKey, game_date: gameDate }
+    });
+  }
+}
+
+// user-key.ts
+export function getOrCreateUserKey(storageKey = 'user_key'): string {
+  let k = localStorage.getItem(storageKey);
+  if (k) return k;
+
+  // Generate a UUID (modern browsers)
+  if ('randomUUID' in crypto) {
+    k = crypto.randomUUID();
+  } else {
+    // simple fallback UUID v4-ish
+    k = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+  localStorage.setItem(storageKey, k);
+  return k;
 }
