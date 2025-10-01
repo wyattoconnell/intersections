@@ -7,6 +7,7 @@ import { DisplayComponent } from '../display/display.component';
 import { LayeredBtnComponent } from '../layered-btn/layered-btn.component';
 import { EndMessageComponent } from '../end-message/end-message.component';
 import { PlayState, loadPlayState, savePlayState, clearPlayState, pruneOldStates } from '../play-state.store';
+import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
   selector: 'app-gameview',
@@ -15,7 +16,7 @@ import { PlayState, loadPlayState, savePlayState, clearPlayState, pruneOldStates
 })
 
 export class GameviewComponent implements OnInit{
-
+  @ViewChild(NavbarComponent) child!: NavbarComponent;
   @ViewChild('blue') blue!: ElementRef<HTMLDivElement>;
   @ViewChild('red') red!: ElementRef<HTMLDivElement>;
   @ViewChild('yellow') yellow!: ElementRef<HTMLDivElement>;
@@ -112,6 +113,7 @@ export class GameviewComponent implements OnInit{
         if (bluelist[2] !== "" && !this.gameover) {bluecat.style.opacity = '20%';}   
       }
     }
+    
     this.par = this.answers.length; 
     this.saveCurrentState();
     });
@@ -119,20 +121,6 @@ export class GameviewComponent implements OnInit{
     this.dataService.getAllGameDates().subscribe(dates => {
       this.gameDates = dates; 
     });
-  
-
-    // this.dataService.getGameToday().subscribe(game => {
-    //   this.gameDate = game.game_date;
-    //   this.source = game.source;
-    //   this.data = game.content;
-    // this.initOrHydrate(this.gameDate);
-    
-    //   const res = this.itemSelector.selectEfficientItems(this.data);
-    //   this.answers = res.selectedItems;
-    //   this.intersections = res.intersections;
-    //   this.missed = this.intersections;
-    //   this.par = this.answers.length;
-    // });
 
     setTimeout(() => {
       let mag = -200;
@@ -232,7 +220,13 @@ export class GameviewComponent implements OnInit{
       this.source = game.source;
       this.data = game.content;
       this.initOrHydrate(this.gameDate);
-      this.saveCurrentState();
+      this.revealGame();
+      if (!this.gameover) {
+        const div = document.getElementById("instructions-div");
+        if (div) {
+          div.style.display = 'none';
+        }
+      }
       const res = this.itemSelector.selectEfficientItems(this.data);
       this.answers = res.selectedItems; 
       this.intersections = res.intersections; 
@@ -242,12 +236,12 @@ export class GameviewComponent implements OnInit{
       const greenlist = this.colorMap['green'];
       const yellowlist = this.colorMap['yellow'];
       const redlist = this.colorMap['red'];
-        for (let i = 0; i < bluelist.length; i++) {
-          bluelist[i]="";
-          greenlist[i]="";
-          yellowlist[i]="";
-          redlist[i]="";
-        }
+      for (let i = 0; i < bluelist.length; i++) {
+        bluelist[i]="";
+        greenlist[i]="";
+        yellowlist[i]="";
+        redlist[i]="";
+      }
       for (const guess of this.guesses) {
         this.checkGuess('green',  guess);
         const greenlist = this.colorMap['green'];
@@ -265,9 +259,11 @@ export class GameviewComponent implements OnInit{
         const bluelist = this.colorMap['blue'];
         const bluecat = document.getElementById('blue')!;
         if (bluelist[2] !== "" && !this.gameover) {bluecat.style.opacity = '20%';}   
-        this.saveCurrentState();
-      };
+      }
+      this.saveCurrentState();
       });   
+      if (this.used) {this.revealPar()};
+      if (!this.used) {this.unrevealPar()}; 
       if (this.howPlayContent == "How Do I Play?"){
         this.howPlayContent = "← Back";
       }
@@ -277,25 +273,32 @@ export class GameviewComponent implements OnInit{
       
   }
 
-  revealPar() {
+  triggerAnimation() {
+    this.child.animate();
+  }
+
+  revealPar(animate: boolean = false) {
     this.used = true;
+    this.saveCurrentState();
     this.par = this.answers.length;
     this.shownPar = this.par.toString();
     let target = document.getElementById("reveal-mobile");
     if (target) {
       target.style.setProperty("opacity", "0.3");
     }
-    this.saveCurrentState();
+    if (animate) {
+      this.triggerAnimation();
+    }
   }
 
   unrevealPar() {
     this.used = false;
+    this.saveCurrentState();
     this.shownPar = "?";
     let target = document.getElementById("reveal-mobile");
     if (target) {
       target.style.setProperty("opacity", "1.0");
     }
-    this.saveCurrentState();
   }
 
   select(div: HTMLDivElement, axis: 'x' | 'y', mag: number, opac: string, text: HTMLElement, guesses: HTMLDivElement) {
@@ -449,14 +452,23 @@ export class GameviewComponent implements OnInit{
 
 private initOrHydrate(dateYmd: string) {
   const existing = loadPlayState(dateYmd);
+  this.day = dateYmd;
   if (existing) {
-    //console.log("found exisiting state...");
     this.guesses = existing.guesses ?? [];
     this.userScore = this.guesses.length;
     this.used = existing.used;
     this.answers = existing.answers ?? [];
-    if (this.used) {this.revealPar()};
-    if (!this.used) {this.unrevealPar()};
+    this.par = this.answers.length;
+    if (this.used) {
+      this.shownPar = this.par.toString();
+      this.revealPar();
+    }
+    if (!this.used) {
+      this.shownPar = "?";
+      this.unrevealPar();
+    }
+    this.answers = existing.answers ?? [];
+    this.par = this.answers.length;
     this.intersections = existing.intersections ?? {};
     this.found = existing.found ?? {};
     this.missed = existing.missed ?? {};
@@ -470,6 +482,8 @@ private initOrHydrate(dateYmd: string) {
     this.found = {};
     this.missed = {};
     this.gameover = false;
+    this.unrevealPar();
+    this.userScore = 0;
 
     savePlayState(dateYmd, {
       guesses: this.guesses,
@@ -483,7 +497,7 @@ private initOrHydrate(dateYmd: string) {
       lastSavedAt: new Date().toISOString()
     });
   }
-  pruneOldStates(30); // optional tidy
+  pruneOldStates(30);
 }
 
 private saveCurrentState() {
@@ -518,3 +532,4 @@ export function ymdInTZ(
   const d = parts.find(p => p.type === 'day')!.value;
   return `${y}-${m}-${d}`; // e.g., '2025-09-30'
 }
+

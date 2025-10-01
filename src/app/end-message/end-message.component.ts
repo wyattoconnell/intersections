@@ -16,6 +16,8 @@ export class EndMessageComponent {
   @Input() userScore = 0;
   @Input() par = 0;
   @Input() displayView = false;
+  @Input() day = "";
+  @Input() today = "";
   @Output() openDisplay = new EventEmitter<boolean>();
   closeText:String = "Start Game";
   startBtn:String = "start-btn";
@@ -28,10 +30,13 @@ export class EndMessageComponent {
   }
 
   copyResults() {
-    let message = "";
-    if (this.userScore == this.par) { message = "I finished today's Intersections with a perfect score! Try to match me at https://intersections.in/";}
-    else { message = "I finished today's Intersections with a score of " + (this.userScore - this.par) + " from perfect! Try to beat me at https://intersections.in/"};
-    this.clipboard.copy(message);
+    let message1 = "";
+    let message2 = "";
+    if (this.today === this.day) { message1 = "I finished today's Intersections";}
+    else { message1 = "I finished Intersections on "+this.day;}
+    if (this.userScore == this.par) { message2 = " with a perfect score! Try to match me at https://intersections.in/";}
+    else { message2 = " with a score of " + (this.userScore - this.par) + " from perfect! Try to beat me at https://intersections.in/"};
+    this.clipboard.copy(message1+message2);
     this.showModal();
   }
 
