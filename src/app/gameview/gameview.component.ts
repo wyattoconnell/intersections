@@ -223,6 +223,10 @@ export class GameviewComponent implements OnInit{
       this.initOrHydrate(this.gameDate);
       this.revealGame();
       if (!this.gameover) {
+        const diamond = document.getElementById('diamond');
+        if (diamond){
+          diamond.classList.remove("mobile-diamond-end");
+        }
         const div = document.getElementById("instructions-div");
         if (div) {
           div.style.display = 'none';
@@ -324,10 +328,11 @@ export class GameviewComponent implements OnInit{
       this.checkGuess('yellow', guess);
       this.checkGuess('blue', guess);
       if (this.hit) {
+        this.hit = false;
         setTimeout(() => {this.router(-200);}, 0);
         setTimeout(() => this.userScore += 1, 2200);
         setTimeout(() => this.innerText = "", 2250);
-        this.hit = false;
+        setTimeout(() => this.innerText = "", 2250);
       }
       else {
         this.shake();
@@ -438,8 +443,7 @@ export class GameviewComponent implements OnInit{
     this.revealPar();
     const diamond = document.getElementById('diamond');
     if (diamond && window.innerWidth < 768){
-      diamond.style.width = "100%";
-      diamond.style.transition= "width 2000ms ease"; 
+      diamond.classList.add("mobile-diamond-end");
     }
     setTimeout(() => {
       const div = document.getElementById("instructions-div");

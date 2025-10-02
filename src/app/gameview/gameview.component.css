@@ -9,6 +9,11 @@
     transition: width 300ms ease; 
 }
 
+.mobile-diamond-end {
+  width: 100% !important;
+  transition: width 2000ms ease !important; 
+}
+
 #display {
     display: block;
 }
