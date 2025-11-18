@@ -72,8 +72,8 @@ export class GameviewComponent implements OnInit{
   showArchive: boolean = true;
   used: boolean = false;
   gameDates: string[] = [];
-  day: string = ymdInTZ();
-  today: string = ymdInTZ();
+  day: string = ymdInTZ(new Date("2025, 10, 4"));
+  today: string = ymdInTZ(new Date("2025, 10, 4"));
 
 
   constructor(private dataService: DataService, private dataSaver: DataSaver, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
@@ -131,6 +131,7 @@ export class GameviewComponent implements OnInit{
   }
 
   endGame() {
+    this.hit = false;
     const green = document.getElementById('green')!;
     const red = document.getElementById('red')!;
     const blue = document.getElementById('blue')!;

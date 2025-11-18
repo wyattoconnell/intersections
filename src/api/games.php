@@ -98,7 +98,8 @@ try {
   if ($game_date !== null && $game_date !== '') {
     // GET by game_date
     if (!is_date_ymd($game_date)) send_err('Invalid game_date (expected YYYY-MM-DD)', 400);
-
+  
+    // First try to get games for the requested date
     $stmt = $conn->prepare(
       "SELECT id, game_date, content, source
        FROM games
@@ -108,14 +109,40 @@ try {
     $stmt->bind_param('s', $game_date);
     $stmt->execute();
     $res = $stmt->get_result();
-
+  
     $rows = [];
     while ($r = $res->fetch_assoc()) {
       $r['content'] = decode_json_or_raw($r['content']);
       $rows[] = $r;
     }
-    send_ok($rows);
+  
+    // If we found at least one game for that date, return them as before
+    if (count($rows) > 0) {
+      send_ok($rows); // same shape as your current response
+    }
+  
+    // Otherwise, fall back to a random game from existing rows
+    $stmt = $conn->prepare(
+      "SELECT id, game_date, content, source
+       FROM games
+       ORDER BY RAND()
+       LIMIT 1"
+    );
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+  
+    if (!$row) {
+      // No rows at all in the DB
+      send_err('No games in database', 404);
+    }
+  
+    $row['content'] = decode_json_or_raw($row['content']);
+  
+    // Keep the same response shape as the normal /game_date (array of games)
+    send_ok([$row]);
   }
+  
 
   // Default: returns puzzle for that day
   date_default_timezone_set('America/Los_Angeles'); // pick your TZ
