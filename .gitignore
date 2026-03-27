@@ -6,6 +6,7 @@
 /out-tsc
 /bazel-out
 api/*
+scripts/*
 
 # Node
 /node_modules
