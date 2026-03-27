@@ -28,7 +28,7 @@
 }
 
 p {
-    font-size: 17px;
+    font-size: 15px;
     margin-bottom: 0.3rem;
 }
 
@@ -214,8 +214,41 @@ input {
     z-index: 9999;
   }
 
-  #text-field {
+#text-field {
     display: none;
+  }
+
+  #input {
+    position: relative;
+  }
+
+  .suggestions {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    max-height: 180px;
+    overflow-y: auto;
+    border-radius: 20px;
+    padding: 6px;
+    z-index: 2000;
+    backdrop-filter: blur(6px);
+  }
+
+  .suggestion-item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 8px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+
+  .suggestion-item.active {
+    outline: 1px solid currentColor;
   }
 
   #reveal-btn {
@@ -369,5 +402,3 @@ input {
     width: 250px;
   }
 }
-
-

@@ -79,8 +79,23 @@
             </div>
             <form (ngSubmit)="onSubmit()">
                 <div id="input" class="form-group mb-0 mt-2 justify-content-center normal sticky-bottom">
+                  <div class="suggestions" *ngIf="showSuggestions">
+                    <button
+                      type="button"
+                      class="suggestion-item"
+                      *ngFor="let actor of filteredActors; let i = index"
+                      [class.active]="i === selectedSuggestionIndex"
+                      (mousedown)="onSuggestionMouseDown($event)"
+                      (click)="applySuggestion(actor)"
+                    >
+                      {{ actor.toLowerCase() }}
+                    </button>
+                  </div>
                   <input [(ngModel)]="innerText" 
                          (ngModelChange)="convertToLowercase()" 
+                         (focus)="onInputFocus()"
+                         (blur)="onInputBlur()"
+                         (keydown)="onInputKeydown($event)"
                          name="innerText" 
                          id="submitGuess" 
                          placeholder="Enter 3 Words Per Category" 
@@ -96,4 +111,3 @@
         </div>
     </div>
 </div>
-

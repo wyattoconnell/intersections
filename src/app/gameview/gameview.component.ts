@@ -54,6 +54,11 @@ export class GameviewComponent implements OnInit{
   source: string = "www.testsource.com";
   gameId: number = 0;
   innerText: string = "";
+  allActors: string[] = [];
+  filteredActors: string[] = [];
+  showSuggestions: boolean = false;
+  selectedSuggestionIndex: number = -1;
+  inputFocused: boolean = false;
   userScore: number = 0;
   par: number = 0;
   shownPar: string = "?";
@@ -82,6 +87,9 @@ export class GameviewComponent implements OnInit{
 
     // this.dataService.getData().subscribe(data => { this.data = data;
     // let res = this.itemSelector.selectEfficientItems(this.data); 
+  this.dataService.getActorList().subscribe(list => {
+    this.allActors = list;
+  });
   this.day = this.today;
   this.dataService.getGameByDate(this.day).subscribe(game => {
     this.gameDate = game.game_date;
@@ -322,6 +330,8 @@ export class GameviewComponent implements OnInit{
     const guess = this.innerText.toLowerCase();
     this.guesses.push(guess);
     this.saveCurrentState();
+    this.showSuggestions = false;
+    this.selectedSuggestionIndex = -1;
     setTimeout(() => {
       const guess = this.innerText.toLowerCase(); 
       this.checkGuess('green', guess);
@@ -346,7 +356,88 @@ export class GameviewComponent implements OnInit{
 
   convertToLowercase(): void {
     this.innerText = this.innerText.toLowerCase();
+    this.updateSuggestions(this.innerText);
   }
+
+  onInputFocus(): void {
+    this.inputFocused = true;
+    this.updateSuggestions(this.innerText);
+  }
+
+  onInputBlur(): void {
+    this.inputFocused = false;
+    // small delay to allow click selection
+    setTimeout(() => {
+      if (!this.inputFocused) {
+        this.showSuggestions = false;
+        this.selectedSuggestionIndex = -1;
+      }
+    }, 120);
+  }
+
+  onInputKeydown(event: KeyboardEvent): void {
+    if (!this.showSuggestions || this.filteredActors.length === 0) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (this.selectedSuggestionIndex === -1) {
+        this.selectedSuggestionIndex = 0;
+      } else {
+        this.selectedSuggestionIndex =
+          (this.selectedSuggestionIndex + 1) % this.filteredActors.length;
+      }
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (this.selectedSuggestionIndex === -1) {
+        this.selectedSuggestionIndex = this.filteredActors.length - 1;
+      } else {
+        this.selectedSuggestionIndex =
+          (this.selectedSuggestionIndex - 1 + this.filteredActors.length) %
+          this.filteredActors.length;
+      }
+      return;
+    }
+    if (event.key === 'Enter' && this.selectedSuggestionIndex >= 0) {
+      event.preventDefault();
+      this.applySuggestion(this.filteredActors[this.selectedSuggestionIndex]);
+    }
+  }
+
+  onSuggestionMouseDown(event: MouseEvent): void {
+    event.preventDefault();
+  }
+
+  applySuggestion(name: string): void {
+    this.innerText = name;
+    this.showSuggestions = false;
+    this.selectedSuggestionIndex = -1;
+  }
+
+  updateSuggestions(query: string): void {
+    const q = (query || '').trim().toLowerCase();
+    if (!q || !this.inputFocused) {
+      this.filteredActors = [];
+      this.showSuggestions = false;
+      this.selectedSuggestionIndex = -1;
+      return;
+    }
+    const matches = this.allActors.filter(a =>
+      a.toLowerCase().includes(q)
+    );
+    matches.sort((a, b) => {
+      const al = a.toLowerCase();
+      const bl = b.toLowerCase();
+      const aStarts = al.startsWith(q);
+      const bStarts = bl.startsWith(q);
+      if (aStarts !== bStarts) return aStarts ? -1 : 1;
+      return al.localeCompare(bl);
+    });
+    this.filteredActors = matches.slice(0, 3);
+    this.showSuggestions = this.filteredActors.length > 0;
+    this.selectedSuggestionIndex = -1;
+  }
+
 
   shake(): void {
     const elements = [this.blue, this.red, this.yellow, this.green];
@@ -551,4 +642,3 @@ export function ymdInTZ(
   const d = parts.find(p => p.type === 'day')!.value;
   return `${y}-${m}-${d}`; // e.g., '2025-09-30'
 }
-

@@ -80,6 +80,25 @@ export class DataService {
     );
   }
 
+  /** Global actor list for autosuggest (from assets/data.json) */
+  getActorList(): Observable<string[]> {
+    return this.http.get<any>(this.jsonFallbackUrl).pipe(
+      map(res => {
+        const raw = res?.actors ?? [];
+        if (Array.isArray(raw)) {
+          if (raw.length > 0 && typeof raw[0] === 'object' && raw[0] !== null) {
+            return raw
+              .map((r: any) => r.name ?? r.primaryName ?? r)
+              .filter((v: any) => typeof v === 'string');
+          }
+          return raw.map((v: any) => String(v));
+        }
+        return [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
   /** returns the full game row: { id, game_date, source, content } */
   getGame(opts?: { date?: string; id?: number }): Observable<Game> {
     let params = new HttpParams();
