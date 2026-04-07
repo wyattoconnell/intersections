@@ -256,6 +256,10 @@ export class GameviewComponent implements OnInit{
         yellowlist[i]="";
         redlist[i]="";
       }
+      document.getElementById('green')!.style.opacity = '90%';
+      document.getElementById('yellow')!.style.opacity = '90%';
+      document.getElementById('blue')!.style.opacity = '90%';
+      document.getElementById('red')!.style.opacity = '90%';
       for (const guess of this.guesses) {
         this.checkGuess('green',  guess);
         const greenlist = this.colorMap['green'];
@@ -409,7 +413,7 @@ export class GameviewComponent implements OnInit{
   }
 
   applySuggestion(name: string): void {
-    this.innerText = name;
+    this.innerText = name.toLowerCase();
     this.showSuggestions = false;
     this.selectedSuggestionIndex = -1;
   }

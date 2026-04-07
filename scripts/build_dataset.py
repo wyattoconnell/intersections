@@ -167,12 +167,23 @@ def main() -> None:
     needed_names = {nconst for entries in principals_map.values() for _, nconst in entries}
     names_map = load_names(names, needed_names)
 
-    # Attach actors (top 25 by billing order)
+    # Attach actors (top 25 by billing order), deduped while preserving order
     for movie in top_movies:
       tconst = movie["imdb_id"]
       entries = principals_map.get(tconst, [])
-      actor_ids = [nconst for _, nconst in entries]
-      actors = [names_map.get(n, n) for n in actor_ids]
+      actor_ids_raw = [nconst for _, nconst in entries]
+      actors_raw = [names_map.get(n, n) for n in actor_ids_raw]
+
+      seen_ids = set()
+      actor_ids: List[str] = []
+      actors: List[str] = []
+      for nconst, name in zip(actor_ids_raw, actors_raw):
+        if nconst in seen_ids:
+          continue
+        seen_ids.add(nconst)
+        actor_ids.append(nconst)
+        actors.append(name)
+
       movie["actor_ids"] = actor_ids
       movie["actors"] = actors
 
@@ -184,6 +195,36 @@ def main() -> None:
     ]
     all_actors.sort(key=lambda x: x["name"].lower())
 
+    # Build weighted graph of movie overlaps (shared actor count)
+    actor_to_movies: Dict[str, List[int]] = defaultdict(list)
+    for idx, movie in enumerate(top_movies):
+        for actor_id in movie.get("actor_ids", []):
+            actor_to_movies[actor_id].append(idx)
+
+    pair_counts: Dict[Tuple[int, int], int] = defaultdict(int)
+    for movie_indices in actor_to_movies.values():
+        if len(movie_indices) < 2:
+            continue
+        for i in range(len(movie_indices)):
+            for j in range(i + 1, len(movie_indices)):
+                a = movie_indices[i]
+                b = movie_indices[j]
+                key = (a, b) if a < b else (b, a)
+                pair_counts[key] += 1
+
+    neighbors: Dict[str, List[Dict[str, int]]] = {m["imdb_id"]: [] for m in top_movies}
+    for (a, b), count in pair_counts.items():
+        if count < 1:
+            continue
+        imdb_a = top_movies[a]["imdb_id"]
+        imdb_b = top_movies[b]["imdb_id"]
+        neighbors[imdb_a].append({"imdb_id": imdb_b, "shared_count": count})
+        neighbors[imdb_b].append({"imdb_id": imdb_a, "shared_count": count})
+
+    # Sort neighbors by descending shared_count for easier sampling later
+    for imdb_id, neigh in neighbors.items():
+        neigh.sort(key=lambda x: x["shared_count"], reverse=True)
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
@@ -191,13 +232,16 @@ def main() -> None:
             {
                 "movies": top_movies,
                 "actors": all_actors,
+                "graph": {
+                    "neighbors": neighbors
+                },
             },
             f,
             ensure_ascii=False,
             indent=2,
         )
 
-    print(f"Wrote {len(top_movies)} movies and {len(all_actors)} actors to {out_path}")
+    print(f"Wrote {len(top_movies)} movies, {len(all_actors)} actors, and graph neighbors to {out_path}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 // src/app/services/play-state.store.ts
 export type StringArrayMap = { [key: string]: string[] };
 
+const GAME_VERSION = 'movies-v2';
+
 export interface PlayState {
   guesses: string[];
   answers: string[];
@@ -14,7 +16,7 @@ export interface PlayState {
 }
 
 function keyFor(dateYmd: string) {
-  return `gameState:${dateYmd}`;
+  return `gameState:${GAME_VERSION}:${dateYmd}`;
 }
 
 export function loadPlayState(dateYmd: string): PlayState | null {
@@ -43,7 +45,7 @@ export function clearPlayState(dateYmd: string): void {
 
 /** Optional: clean up older days (keeps latest N states) */
 export function pruneOldStates(maxToKeep = 30) {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('gameState:'));
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(`gameState:${GAME_VERSION}:`));
   const sorted = keys.sort().reverse(); // YYYY-MM-DD sorts lexicographically
   for (const k of sorted.slice(maxToKeep)) localStorage.removeItem(k);
 }
