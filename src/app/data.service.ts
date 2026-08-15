@@ -27,13 +27,13 @@ export class DataService {
 
   getGameToday() {
     return this.http
-      .get<{ data: Game }>(`${this.apiBase}/games.php`)
+      .get<{ data: Game }>(`${this.apiBase}/games`)
       .pipe(map(res => res.data));
   }
 
   getAllGameDates() {
     return this.http
-      .get<ApiOk<string[]>>(`${this.apiBase}/games.php`, { params: { dates: '1' } })
+      .get<ApiOk<string[]>>(`${this.apiBase}/games`, { params: { dates: '1' } })
       .pipe(map(res => res.data ?? []));
   }
 
@@ -61,7 +61,7 @@ export class DataService {
 /** Full row for a specific calendar day (YYYY-MM-DD). */
   getGameByDate(date: string) {
     return this.http
-      .get<{ data: Game[] }>(`${this.apiBase}/games.php`, { params: { game_date: date } })
+      .get<{ data: Game[] }>(`${this.apiBase}/games`, { params: { game_date: date } })
       .pipe(
         map(res => res.data?.[0] as Game), // API returns an array for date queries
       );
@@ -86,10 +86,10 @@ export class DataService {
     if (opts?.id != null) params = params.set('id', String(opts.id));
     if (opts?.date) params = params.set('game_date', opts.date);
     if (opts?.id != null) {
-      return this.http.get<ApiOk<Game>>(`${this.apiBase}/games.php`, { params })
+      return this.http.get<ApiOk<Game>>(`${this.apiBase}/games`, { params })
         .pipe(map(res => res.data));
     } else {
-      return this.http.get<ApiOk<Game[]>>(`${this.apiBase}/games.php`, { params })
+      return this.http.get<ApiOk<Game[]>>(`${this.apiBase}/games`, { params })
         .pipe(map(res => (res.data?.[0] as Game)));
     }
   }
@@ -103,19 +103,17 @@ export class DataSaver {
 
   savePlayState(userKey: string, gameDate: string, state: PlayState) {
     userKey = getOrCreateUserKey();
-    return this.http.post(`${environment.apiBaseUrl}/game_data.php?_method=PUT`, {
+    return this.http.put(`${environment.apiBaseUrl}/game_data`, {
       user_key: userKey,
       game_date: gameDate,
       state,
       started_at: state.startedAt ?? null,
       last_saved_at: state.lastSavedAt ?? null
-    }, {
-      headers: { 'X-HTTP-Method-Override': 'PUT' }
     });
   }
-  
+
   loadPlayState(userKey: string, gameDate: string) {
-    return this.http.get<{data:any}>(`${environment.apiBaseUrl}/game_data.php`, {
+    return this.http.get<{data:any}>(`${environment.apiBaseUrl}/game_data`, {
       params: { user_key: userKey, game_date: gameDate }
     });
   }

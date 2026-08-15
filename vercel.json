@@ -1,0 +1,5 @@
+{
+  "buildCommand": "ng build",
+  "outputDirectory": "dist/homework8/browser",
+  "installCommand": "npm install"
+}
