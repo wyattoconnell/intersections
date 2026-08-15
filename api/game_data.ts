@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabase, sendOk, sendErr, isDateYmd, q, type Json } from './_supabase';
+import { getSupabase, sendOk, sendErr, isDateYmd, q, type Json } from './_supabase.js';
 
 const STATE_COLUMNS = 'id, user_key, game_date, state, started_at, last_saved_at, created_at, updated_at';
 

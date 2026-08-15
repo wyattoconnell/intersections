@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabase, sendOk, sendErr, isDateYmd, todayInTZ, q } from './_supabase';
+import { getSupabase, sendOk, sendErr, isDateYmd, todayInTZ, q } from './_supabase.js';
 
 const GAME_COLUMNS = 'id, game_date, content, source';
 
