@@ -43,3 +43,5 @@ Thumbs.db
 
 # API
 ./src/api
+.vercel
+.env*.local
