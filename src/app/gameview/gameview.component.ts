@@ -72,8 +72,8 @@ export class GameviewComponent implements OnInit{
   showArchive: boolean = true;
   used: boolean = false;
   gameDates: string[] = [];
-  day: string = ymdInTZ(new Date("2025, 10, 4"));
-  today: string = ymdInTZ(new Date("2025, 10, 4"));
+  day: string = ymdInTZ();
+  today: string = ymdInTZ();
 
 
   constructor(private dataService: DataService, private dataSaver: DataSaver, private renderer: Renderer2, private itemSelector: ItemSelectorService) {}
