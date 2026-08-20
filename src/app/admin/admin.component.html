@@ -1,0 +1,41 @@
+<div class="admin-page">
+  <h1 class="logo">Intersections Admin</h1>
+
+  <p *ngIf="checkingAuth" class="normal">Loading&hellip;</p>
+
+  <form *ngIf="!checkingAuth && !authenticated" (ngSubmit)="login()" class="login-form">
+    <input
+      type="password"
+      [(ngModel)]="password"
+      name="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    />
+    <button type="submit" class="btn bold login-btn">Log in</button>
+    <p *ngIf="loginError" class="error-text normal">{{ loginError }}</p>
+  </form>
+
+  <div *ngIf="!checkingAuth && authenticated" class="pending-list">
+    <p *ngIf="loadError" class="error-text normal">{{ loadError }}</p>
+    <p *ngIf="pendingGames.length === 0" class="normal">No pending games right now.</p>
+
+    <div *ngFor="let game of pendingGames" class="pending-card">
+      <div class="pending-card-header">
+        <span class="bold">{{ game.game_date }}</span>
+        <span class="source normal">{{ game.source }}</span>
+      </div>
+
+      <div class="categories">
+        <div *ngFor="let cat of categoriesOf(game)" class="category" [ngClass]="cat.color">
+          <div class="category-name bold">{{ cat.name }}</div>
+          <div class="category-items normal">{{ cat.items.join(', ') }}</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn approve bold" (click)="review(game, 'approve')">Approve</button>
+        <button class="btn reject bold" (click)="review(game, 'reject')">Reject</button>
+      </div>
+    </div>
+  </div>
+</div>

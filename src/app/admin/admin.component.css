@@ -1,0 +1,148 @@
+.admin-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  color: black;
+}
+
+.logo {
+  font-family: "Comfortaa", serif;
+  font-optical-sizing: auto;
+  font-weight: 900;
+  font-style: normal;
+  margin-bottom: 24px;
+}
+
+.bold,
+.normal {
+  font-family: "Comfortaa", serif;
+  font-optical-sizing: auto;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.normal {
+  font-weight: 300;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 280px;
+}
+
+input {
+  border: 1px solid rgb(0, 0, 0);
+  border-radius: 20px;
+  padding: 10px;
+  font-family: "Comfortaa", serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+}
+
+input:focus {
+  outline: none;
+}
+
+.btn {
+  border-radius: 20px;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: black;
+}
+
+.login-btn {
+  background-color: #0cbaf1;
+  opacity: 0.85;
+}
+
+.error-text {
+  color: #fe0606;
+}
+
+.pending-card {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.pending-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.source {
+  opacity: 60%;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.category {
+  position: relative;
+  border-radius: 20px;
+  padding: 12px;
+  color: black;
+}
+
+.category::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 60%;
+  border-radius: 20px;
+  z-index: -1;
+}
+
+.category.blue::before {
+  background-color: #0cbaf1;
+}
+
+.category.red::before {
+  background-color: #fe0606;
+}
+
+.category.green::before {
+  background-color: rgb(0, 216, 10);
+}
+
+.category.yellow::before {
+  background-color: #f2ff00;
+}
+
+.category-name {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.category-items {
+  font-size: 13px;
+  opacity: 90%;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.approve {
+  background-color: rgb(0, 216, 10);
+}
+
+.reject {
+  background-color: #fe0606;
+  color: white;
+}

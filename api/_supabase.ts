@@ -6,9 +6,9 @@ interface Database {
   public: {
     Tables: {
       games: {
-        Row: { id: number; game_date: string; content: Json; source: string | null };
-        Insert: { id?: number; game_date: string; content: Json; source?: string | null };
-        Update: Partial<{ id: number; game_date: string; content: Json; source: string | null }>;
+        Row: { id: number; game_date: string; content: Json; source: string | null; status: string };
+        Insert: { id?: number; game_date: string; content: Json; source?: string | null; status?: string };
+        Update: Partial<{ id: number; game_date: string; content: Json; source: string | null; status: string }>;
         Relationships: [];
       };
       game_data: {

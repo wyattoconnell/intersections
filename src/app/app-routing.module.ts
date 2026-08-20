@@ -1,7 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { GameviewComponent } from './gameview/gameview.component';
+import { AdminComponent } from './admin/admin.component';
 
-const routes: Routes = [];
+const routes: Routes = [
+  { path: '', component: GameviewComponent },
+  { path: 'admin', component: AdminComponent },
+];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, { useHash : true })],

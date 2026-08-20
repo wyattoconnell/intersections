@@ -11,6 +11,7 @@ import { InstructionModalComponent } from './instruction-modal/instruction-modal
 import { LayeredBtnComponent } from './layered-btn/layered-btn.component';
 import { DisplayComponent } from './display/display.component';
 import { EndMessageComponent } from './end-message/end-message.component';
+import { AdminComponent } from './admin/admin.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import { EndMessageComponent } from './end-message/end-message.component';
     InstructionModalComponent,
     LayeredBtnComponent,
     DisplayComponent,
-    EndMessageComponent
+    EndMessageComponent,
+    AdminComponent
   ],
   imports: [
     BrowserModule,

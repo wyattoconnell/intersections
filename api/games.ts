@@ -20,6 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('games')
         .select(GAME_COLUMNS)
         .eq('id', idNum)
+        .eq('status', 'approved')
         .maybeSingle();
       if (error) throw error;
       if (!row) return sendErr(res, 'Not found', 404);
@@ -34,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('games')
         .select(GAME_COLUMNS)
         .eq('game_date', gameDate)
+        .eq('status', 'approved')
         .order('id', { ascending: false });
       if (error) throw error;
 
@@ -45,7 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // (mirrors games.php's "ORDER BY RAND() LIMIT 1" fallback).
       const { count, error: countErr } = await sb
         .from('games')
-        .select('id', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'approved');
       if (countErr) throw countErr;
       if (!count) return sendErr(res, 'No games in database', 404);
 
@@ -53,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: randomRows, error: randomErr } = await sb
         .from('games')
         .select(GAME_COLUMNS)
+        .eq('status', 'approved')
         .range(offset, offset);
       if (randomErr) throw randomErr;
       if (!randomRows || randomRows.length === 0) return sendErr(res, 'No games in database', 404);
@@ -66,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: rows, error } = await sb
         .from('games')
         .select('game_date')
+        .eq('status', 'approved')
         .lte('game_date', today)
         .order('game_date', { ascending: false })
         .limit(365);
@@ -81,6 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('games')
       .select(GAME_COLUMNS)
       .eq('game_date', today)
+      .eq('status', 'approved')
       .limit(1)
       .maybeSingle();
     if (error) throw error;
