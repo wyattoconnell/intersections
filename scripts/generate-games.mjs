@@ -430,6 +430,7 @@ function isUsableAlias(name) {
   if (name.length < 4) return false;
   if (/[^A-Za-z .'-]/.test(name)) return false;
   if (name.length <= 6 && name === name.toUpperCase()) return false;
+  if (name.trim().split(/\s+/).length > 4) return false; // e.g. "The Grand Canyon State" is fine, longer descriptive aliases aren't
   return true;
 }
 
