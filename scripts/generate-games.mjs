@@ -1,21 +1,31 @@
-// Wikidata-sourced semantic-overlap game generator (v1).
+// Wikidata-sourced game generator (v2): semantic-overlap + lexical-collision.
 //
-// One or more "base classes" (e.g. US states) each get narrowed by several
-// independent constraints (e.g. "borders Canada", "population over 10M").
-// Two constraints "collide" when the same entity qualifies for both --
-// that's the game's intersection mechanic. No stripping/label-matching
-// needed: matching is by Wikidata QID, since it's the same real-world
-// entity.
+// Semantic-overlap mode: one or more "base classes" (e.g. US states) each
+// get narrowed by several independent constraints (e.g. "borders Canada",
+// "population over the 75th percentile"). Two constraints "collide" when
+// the same entity qualifies for both -- matching is by Wikidata QID, since
+// it's the same real-world entity.
 //
-// Constraints are built from a small set of reusable *pattern* functions
-// (numericThreshold, dateThreshold, ...) rather than hand-written SPARQL
-// per constraint. Each pattern also computes its own category_name from
-// the same structured parameters used to build the query -- there's no
-// separate free-text name to keep in sync by hand. Each base class
-// supplies a `properties` map (which PID backs "population," "founding
-// date," etc. for its entities) and a list of pattern instances built from
-// those properties -- so adding a new base class means declaring its
-// properties + constraint list, not writing new SPARQL shapes or names.
+// Lexical-collision mode: several independent entity lists from unrelated
+// domains (e.g. US states, chemical elements) "collide" when two different
+// entities happen to share a bare name (e.g. "Georgia" the US state and
+// "Georgia" the country) -- matching is by stripped, lowercased label
+// instead of QID, since these are genuinely different entities.
+//
+// Both modes share the same collision-detection, assembly, dedup-against-
+// existing-games, date-assignment, and insert logic -- only how each
+// "constraint"/"template" is fetched and what key its entities are matched
+// on differs. See findCollidingPairs's `keyFn` parameter.
+//
+// Constraint *values* (thresholds, comparison years) are derived from the
+// actual data at generation time -- a percentile of the real distribution,
+// rounded to a "nice" number -- rather than a hand-picked constant, and
+// relational constraints (borders X, located next to Y) are discovered by
+// finding which values of a property actually occur often enough across
+// the base class, rather than a human hand-picking specific targets. This
+// mirrors the same "try broadly, keep what empirically works" approach
+// already used for pairwise-overlap discovery and the sparsity filter --
+// applied one level earlier, at parameter discovery.
 //
 // Run manually:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/generate-games.mjs
@@ -31,15 +41,18 @@ const USER_AGENT = 'IntersectionsGameGenerator/1.0 (https://intersections.in; ga
 const MIN_REQUEST_GAP_MS = 1200; // be polite to the public WDQS endpoint
 const COLORS = ['blue', 'red', 'yellow', 'green'];
 // item-selector.service.ts needs >=3 items to ever "cover" a category, so a
-// constraint that comes back thinner than this isn't usable -- whether
-// because the pattern genuinely doesn't apply to this base class (e.g.
-// "borders" queried against college mascots) or just happened to match few
-// entities. Either way, empirically too sparse is empirically too sparse.
+// constraint/template that comes back thinner than this isn't usable --
+// whether because it genuinely doesn't apply (e.g. "borders" queried
+// against college mascots) or just happened to match few entities. Either
+// way, empirically too sparse is empirically too sparse.
 const MIN_CONSTRAINT_ITEMS = 3;
 // Reject a candidate if its best available combination still shares this
 // many (or more) of its 4 categories with an existing pending/approved/
 // rejected game -- i.e. it's basically the same puzzle again.
 const MAX_ACCEPTABLE_CATEGORY_OVERLAP = 2;
+// How many auto-discovered relational constraints (e.g. distinct bordering
+// countries) to generate per property, at most.
+const AUTO_DISCOVERY_LIMIT = 3;
 
 let lastRequestAt = 0;
 
@@ -85,15 +98,100 @@ async function fetchBaseClassEntities(qid) {
   return rows.map((r) => ({ qid: qidFromUri(r.item.value), label: r.itemLabel.value }));
 }
 
+// --- Parameter auto-derivation --------------------------------------------
+// Instead of a hand-picked threshold/target, ask the data what's actually
+// there: a percentile of the real value distribution for thresholds, or
+// the most common actual values for relational properties.
+
+function roundToNiceNumber(n) {
+  if (!Number.isFinite(n) || n === 0) return n;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(Math.abs(n))));
+  return Math.round(n / magnitude) * magnitude;
+}
+
+function roundToNiceYear(y) {
+  return Math.round(y / 25) * 25;
+}
+
+async function fetchNumericPercentile(entities, property, percentile) {
+  const rows = await sparqlQuery(`
+    SELECT ?item ?value WHERE {
+      VALUES ?item { ${valuesClause(entities)} }
+      ?item wdt:${property} ?value .
+    }
+  `);
+  const values = rows
+    .map((r) => Number(r.value.value))
+    .filter((v) => Number.isFinite(v))
+    .sort((a, b) => a - b);
+  if (values.length === 0) return null;
+  const idx = Math.min(values.length - 1, Math.floor(percentile * values.length));
+  return roundToNiceNumber(values[idx]);
+}
+
+async function fetchYearPercentile(entities, property, percentile) {
+  const rows = await sparqlQuery(`
+    SELECT ?item ?date WHERE {
+      VALUES ?item { ${valuesClause(entities)} }
+      ?item wdt:${property} ?date .
+    }
+  `);
+  const years = rows
+    .map((r) => new Date(r.date.value).getUTCFullYear())
+    .filter((y) => Number.isFinite(y))
+    .sort((a, b) => a - b);
+  if (years.length === 0) return null;
+  const idx = Math.min(years.length - 1, Math.floor(percentile * years.length));
+  return roundToNiceYear(years[idx]);
+}
+
+// Distinct values a property actually takes across the base class, most
+// common first, restricted to ones that clear MIN_CONSTRAINT_ITEMS -- so
+// only relational constraints likely to produce a usable category are ever
+// attempted.
+async function fetchDistinctPropertyValues(entities, property, limit) {
+  const rows = await sparqlQuery(`
+    SELECT ?target ?targetLabel (COUNT(DISTINCT ?item) as ?count) WHERE {
+      VALUES ?item { ${valuesClause(entities)} }
+      ?item wdt:${property} ?target .
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    GROUP BY ?target ?targetLabel
+    HAVING (COUNT(DISTINCT ?item) >= ${MIN_CONSTRAINT_ITEMS})
+    ORDER BY DESC(?count)
+    LIMIT ${limit}
+  `);
+  return rows.map((r) => ({ qid: qidFromUri(r.target.value), label: r.targetLabel.value }));
+}
+
+// Same idea, but one hop further: "?item --relationProperty--> ?related",
+// grouped by ?related's *country* (P17) rather than ?related itself -- e.g.
+// which countries a state's bordering provinces actually belong to.
+async function fetchDistinctRelatedCountries(entities, relationProperty, limit) {
+  const rows = await sparqlQuery(`
+    SELECT ?country ?countryLabel (COUNT(DISTINCT ?item) as ?count) WHERE {
+      VALUES ?item { ${valuesClause(entities)} }
+      ?item wdt:${relationProperty} ?related .
+      ?related wdt:P17 ?country .
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    GROUP BY ?country ?countryLabel
+    HAVING (COUNT(DISTINCT ?item) >= ${MIN_CONSTRAINT_ITEMS})
+    ORDER BY DESC(?count)
+    LIMIT ${limit}
+  `);
+  return rows.map((r) => ({ qid: qidFromUri(r.country.value), label: r.countryLabel.value }));
+}
+
 // --- Reusable constraint patterns -------------------------------------
 // Each takes the base class's entity universe (to bound the query) plus
 // pattern-specific parameters, and returns a { name, sparql } constraint.
 // The category_name is computed from those same parameters (entity noun,
 // property label, comparator, value/target labels) rather than being a
 // separately hand-typed string -- change a threshold and the name updates
-// with it. Property PIDs and specific thresholds/targets are supplied by
-// each base class's config below; these functions only know the query
-// *shape* and how to phrase it in English.
+// with it. These functions only know the query *shape* and how to phrase
+// it in English; the *Auto wrappers below resolve the actual threshold/
+// target values from real data before calling these.
 
 const NUMERIC_COMPARATOR_WORDS = { '>': 'Over', '<': 'Under', '>=': 'At Least', '<=': 'At Most' };
 const DATE_COMPARATOR_WORDS = { '<': 'Before', '>': 'After', '<=': 'By', '>=': 'Since' };
@@ -146,8 +244,7 @@ function relatedEntityInCountry(entities, { entityNoun, relationLabel, relationP
 }
 
 // "?item --property--> one of these specific target QIDs" -- e.g. states
-// adjacent to the Pacific or Atlantic Ocean, via P206. `values` is
-// [{ qid, label }, ...] since these targets need a display label too.
+// adjacent to a specific ocean, via P206. `values` is [{ qid, label }, ...].
 function hasPropertyValueIn(entities, { entityNoun, prepositionPhrase, property, values }) {
   const name = `${entityNoun} ${prepositionPhrase} ${values.map((v) => v.label).join(' or ')}`;
   return {
@@ -163,12 +260,42 @@ function hasPropertyValueIn(entities, { entityNoun, prepositionPhrase, property,
   };
 }
 
-// --- Base classes --------------------------------------------------------
+// --- Auto-parameterized wrappers ------------------------------------------
+// These resolve real threshold/target values first, then delegate to the
+// pattern functions above. Each returns an array (possibly empty) so
+// buildConstraints can just concatenate results without caring whether a
+// given call produced zero, one, or several constraints.
+
+async function numericThresholdAuto(entities, { entityNoun, propertyLabel, property, comparator, percentile }) {
+  const value = await fetchNumericPercentile(entities, property, percentile);
+  if (value == null) return [];
+  return [numericThreshold(entities, { entityNoun, propertyLabel, property, comparator, value })];
+}
+
+async function dateThresholdAuto(entities, { entityNoun, eventPhrase, property, comparator, percentile }) {
+  const year = await fetchYearPercentile(entities, property, percentile);
+  if (year == null) return [];
+  return [dateThreshold(entities, { entityNoun, eventPhrase, property, comparator, year })];
+}
+
+async function relatedEntityInCountryAuto(entities, { entityNoun, relationLabel, relationProperty, limit = AUTO_DISCOVERY_LIMIT }) {
+  const countries = await fetchDistinctRelatedCountries(entities, relationProperty, limit);
+  return countries.map((c) =>
+    relatedEntityInCountry(entities, { entityNoun, relationLabel, relationProperty, countryQid: c.qid, countryLabel: c.label })
+  );
+}
+
+async function hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase, property, limit = AUTO_DISCOVERY_LIMIT }) {
+  const targets = await fetchDistinctPropertyValues(entities, property, limit);
+  return targets.map((t) => hasPropertyValueIn(entities, { entityNoun, prepositionPhrase, property, values: [t] }));
+}
+
+// --- Base classes (semantic-overlap mode) ---------------------------------
 // Adding a new base class means: its Wikidata class QID, an English noun
 // for its entities, the PIDs backing whichever generic properties its
-// entities actually have, and a list of pattern instances built from those
-// PIDs. No new SPARQL shapes or hand-written names needed unless a
-// genuinely new *kind* of pattern comes up.
+// entities actually have, and which auto-parameterized patterns to run
+// against those properties. No hand-picked thresholds/targets, no new
+// SPARQL shapes, unless a genuinely new *kind* of pattern comes up.
 
 const BASE_CLASSES = [
   {
@@ -181,60 +308,27 @@ const BASE_CLASSES = [
       sharesBorderWith: 'P47',
       locatedNextToBodyOfWater: 'P206',
     },
-    buildConstraints(entities, props, entityNoun) {
-      return [
-        numericThreshold(entities, {
-          entityNoun,
-          propertyLabel: 'Population',
-          property: props.population,
-          comparator: '>',
-          value: 10000000,
-        }),
-        dateThreshold(entities, {
-          entityNoun,
-          eventPhrase: 'Admitted to the Union',
-          property: props.inceptionDate,
-          comparator: '<',
-          year: 1800,
-        }),
-        relatedEntityInCountry(entities, {
-          entityNoun,
-          relationLabel: 'Bordering',
-          relationProperty: props.sharesBorderWith,
-          countryQid: 'Q16',
-          countryLabel: 'Canada',
-        }),
-        relatedEntityInCountry(entities, {
-          entityNoun,
-          relationLabel: 'Bordering',
-          relationProperty: props.sharesBorderWith,
-          countryQid: 'Q96',
-          countryLabel: 'Mexico',
-        }),
-        hasPropertyValueIn(entities, {
-          entityNoun,
-          prepositionPhrase: 'On the',
-          property: props.locatedNextToBodyOfWater,
-          values: [
-            { qid: 'Q98', label: 'Pacific Ocean' },
-            { qid: 'Q97', label: 'Atlantic Ocean' },
-          ],
-        }),
-        numericThreshold(entities, {
-          entityNoun,
-          propertyLabel: 'Population',
-          property: props.population,
-          comparator: '<',
-          value: 1000000,
-        }),
-        dateThreshold(entities, {
-          entityNoun,
-          eventPhrase: 'Admitted to the Union',
-          property: props.inceptionDate,
-          comparator: '>',
-          year: 1950,
-        }),
-      ];
+    async buildConstraints(entities, props, entityNoun) {
+      const constraints = [];
+      constraints.push(
+        ...(await numericThresholdAuto(entities, { entityNoun, propertyLabel: 'Population', property: props.population, comparator: '>', percentile: 0.75 }))
+      );
+      constraints.push(
+        ...(await numericThresholdAuto(entities, { entityNoun, propertyLabel: 'Population', property: props.population, comparator: '<', percentile: 0.25 }))
+      );
+      constraints.push(
+        ...(await dateThresholdAuto(entities, { entityNoun, eventPhrase: 'Admitted to the Union', property: props.inceptionDate, comparator: '<', percentile: 0.25 }))
+      );
+      constraints.push(
+        ...(await dateThresholdAuto(entities, { entityNoun, eventPhrase: 'Admitted to the Union', property: props.inceptionDate, comparator: '>', percentile: 0.75 }))
+      );
+      constraints.push(
+        ...(await relatedEntityInCountryAuto(entities, { entityNoun, relationLabel: 'Bordering', relationProperty: props.sharesBorderWith }))
+      );
+      constraints.push(
+        ...(await hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase: 'On the', property: props.locatedNextToBodyOfWater }))
+      );
+      return constraints;
     },
   },
   {
@@ -247,38 +341,59 @@ const BASE_CLASSES = [
       sharesBorderWith: 'P47',
       locatedNextToBodyOfWater: 'P206',
     },
-    buildConstraints(entities, props, entityNoun) {
-      return [
-        numericThreshold(entities, {
-          entityNoun,
-          propertyLabel: 'Population',
-          property: props.population,
-          comparator: '>',
-          value: 100000000,
-        }),
-        dateThreshold(entities, {
-          entityNoun,
-          eventPhrase: 'Formed',
-          property: props.inceptionDate,
-          comparator: '<',
-          year: 1800,
-        }),
-        hasPropertyValueIn(entities, {
-          entityNoun,
-          prepositionPhrase: 'Bordering',
-          property: props.sharesBorderWith,
-          values: [{ qid: 'Q148', label: 'China' }],
-        }),
-        hasPropertyValueIn(entities, {
-          entityNoun,
-          prepositionPhrase: 'On the',
-          property: props.locatedNextToBodyOfWater,
-          values: [{ qid: 'Q4918', label: 'Mediterranean Sea' }],
-        }),
-      ];
+    async buildConstraints(entities, props, entityNoun) {
+      const constraints = [];
+      constraints.push(
+        ...(await numericThresholdAuto(entities, { entityNoun, propertyLabel: 'Population', property: props.population, comparator: '>', percentile: 0.75 }))
+      );
+      constraints.push(
+        ...(await dateThresholdAuto(entities, { entityNoun, eventPhrase: 'Formed', property: props.inceptionDate, comparator: '<', percentile: 0.25 }))
+      );
+      constraints.push(
+        ...(await hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase: 'Bordering', property: props.sharesBorderWith }))
+      );
+      constraints.push(
+        ...(await hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase: 'On the', property: props.locatedNextToBodyOfWater }))
+      );
+      return constraints;
     },
   },
 ];
+
+// --- Lexical-collision templates -------------------------------------------
+// Each is just a Wikidata class to fetch, plus regexes to strip a domain
+// qualifier off the label before comparing (e.g. " University" -> bare
+// school name). Matching happens on the stripped, lowercased label instead
+// of QID -- these are genuinely different entities that just share a name.
+// `strip: []` is fine when the label is already bare (e.g. state names).
+
+const LEXICAL_TEMPLATES = [
+  { name: 'US States', qid: 'Q35657', strip: [] },
+  { name: 'Countries of the World', qid: 'Q6256', strip: [] },
+  { name: 'Chemical Elements', qid: 'Q11344', strip: [] },
+  { name: 'Constellations', qid: 'Q8928', strip: [] },
+];
+
+function applyStrip(label, stripRules) {
+  let s = label;
+  for (const re of stripRules) s = s.replace(re, '');
+  return s.trim().toLowerCase();
+}
+
+async function fetchLexicalTemplateEntities(template) {
+  const rows = await sparqlQuery(`
+    SELECT ?item ?itemLabel WHERE {
+      ?item wdt:P31 wd:${template.qid} .
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    } ORDER BY ?itemLabel
+  `);
+  return rows.map((r) => {
+    const label = r.itemLabel.value;
+    return { qid: qidFromUri(r.item.value), label, bareKey: applyStrip(label, template.strip) };
+  });
+}
+
+// --- Shared pipeline: collision detection, assembly, dedup ----------------
 
 async function fetchConstraintResults(constraints) {
   const results = [];
@@ -297,14 +412,17 @@ async function fetchConstraintResults(constraints) {
   return results;
 }
 
-function findCollidingPairs(constraintResults) {
+// `keyFn` is what makes this work for both modes: QID for semantic overlap
+// (same entity, two constraints), stripped label for lexical collision
+// (different entities, same name).
+function findCollidingPairs(constraintResults, keyFn = (e) => e.qid) {
   const pairs = [];
   for (let i = 0; i < constraintResults.length; i++) {
     for (let j = i + 1; j < constraintResults.length; j++) {
       const a = constraintResults[i];
       const b = constraintResults[j];
-      const aQids = new Set(a.entities.map((e) => e.qid));
-      const shared = b.entities.filter((e) => aQids.has(e.qid));
+      const aKeys = new Set(a.entities.map(keyFn));
+      const shared = b.entities.filter((e) => aKeys.has(keyFn(e)));
       if (shared.length > 0) {
         pairs.push({ a, b, shared });
       }
@@ -432,11 +550,35 @@ async function generateCandidateForBaseClass(baseClass, existingCategorySets) {
   const entities = await fetchBaseClassEntities(baseClass.qid);
   console.log(`  -> ${entities.length} entities`);
 
-  const constraints = baseClass.buildConstraints(entities, baseClass.properties, baseClass.entityNoun);
+  const constraints = await baseClass.buildConstraints(entities, baseClass.properties, baseClass.entityNoun);
   const constraintResults = await fetchConstraintResults(constraints);
 
   const collidingPairs = findCollidingPairs(constraintResults);
   console.log(`Found ${collidingPairs.length} colliding constraint pair(s):`);
+  for (const p of collidingPairs) {
+    console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
+  }
+
+  return assembleCandidate(constraintResults, collidingPairs, existingCategorySets);
+}
+
+async function generateLexicalCandidate(existingCategorySets) {
+  console.log(`\n=== Lexical collision (${LEXICAL_TEMPLATES.map((t) => t.name).join(', ')}) ===`);
+
+  const constraintResults = [];
+  for (const t of LEXICAL_TEMPLATES) {
+    console.log(`Fetching: ${t.name}`);
+    const entities = await fetchLexicalTemplateEntities(t);
+    console.log(`  -> ${entities.length} entities`);
+    if (entities.length < MIN_CONSTRAINT_ITEMS) {
+      console.log(`  -> skipping "${t.name}": too few entities`);
+      continue;
+    }
+    constraintResults.push({ name: t.name, entities });
+  }
+
+  const collidingPairs = findCollidingPairs(constraintResults, (e) => e.bareKey);
+  console.log(`Found ${collidingPairs.length} colliding template pair(s):`);
   for (const p of collidingPairs) {
     console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
   }
@@ -467,6 +609,14 @@ async function main() {
     } else {
       console.log(`No usable candidate for ${baseClass.name} this run.`);
     }
+  }
+
+  const lexicalCandidate = await generateLexicalCandidate(existingCategorySets);
+  if (lexicalCandidate) {
+    candidates.push(lexicalCandidate);
+    existingCategorySets.push(categoryNameSet(lexicalCandidate));
+  } else {
+    console.log('No usable lexical candidate this run.');
   }
 
   if (candidates.length === 0) {
