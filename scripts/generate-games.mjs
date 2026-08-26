@@ -1,10 +1,19 @@
 // Wikidata-sourced semantic-overlap game generator (v1).
 //
-// Base class: US states (Q35657). Each "constraint" below is an independent
-// SPARQL query narrowing that same class (e.g. "borders Canada"). Two
-// constraints "collide" when the same state qualifies for both -- that's
-// the game's intersection mechanic. No stripping/label-matching needed:
-// matching is by Wikidata QID, since it's the same real-world entity.
+// One or more "base classes" (e.g. US states) each get narrowed by several
+// independent constraints (e.g. "borders Canada", "population over 10M").
+// Two constraints "collide" when the same entity qualifies for both --
+// that's the game's intersection mechanic. No stripping/label-matching
+// needed: matching is by Wikidata QID, since it's the same real-world
+// entity.
+//
+// Constraints are built from a small set of reusable *pattern* functions
+// (numericThreshold, dateThreshold, ...) rather than hand-written SPARQL
+// per constraint. Each base class supplies a `properties` map (which PID
+// backs "population," "founding date," etc. for its entities) and a list
+// of pattern instances built from those properties -- so adding a new base
+// class means declaring its properties + constraint list, not writing new
+// SPARQL shapes.
 //
 // Run manually:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/generate-games.mjs
@@ -56,90 +65,142 @@ function qidFromUri(uri) {
   return uri.split('/').pop();
 }
 
-async function fetchUsStates() {
+function valuesClause(entities) {
+  return entities.map((e) => `wd:${e.qid}`).join(' ');
+}
+
+async function fetchBaseClassEntities(qid) {
   const rows = await sparqlQuery(`
-    SELECT ?state ?stateLabel WHERE {
-      ?state wdt:P31 wd:Q35657 .
+    SELECT ?item ?itemLabel WHERE {
+      ?item wdt:P31 wd:${qid} .
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-    } ORDER BY ?stateLabel
+    } ORDER BY ?itemLabel
   `);
-  return rows.map((r) => ({ qid: qidFromUri(r.state.value), label: r.stateLabel.value }));
+  return rows.map((r) => ({ qid: qidFromUri(r.item.value), label: r.itemLabel.value }));
 }
 
-function valuesClause(states) {
-  return states.map((s) => `wd:${s.qid}`).join(' ');
+// --- Reusable constraint patterns -------------------------------------
+// Each takes the base class's entity universe (to bound the query) plus
+// pattern-specific parameters, and returns a { name, sparql } constraint.
+// Property PIDs and specific thresholds/targets are supplied by each base
+// class's config below -- these functions only know the query *shape*.
+
+function numericThreshold(entities, { name, property, comparator, value }) {
+  return {
+    name,
+    sparql: `
+      SELECT DISTINCT ?item ?itemLabel WHERE {
+        VALUES ?item { ${valuesClause(entities)} }
+        ?item wdt:${property} ?value .
+        FILTER(?value ${comparator} ${value})
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+    `,
+  };
 }
 
-// Each constraint is scoped to the US-states VALUES set fetched above, so
-// every query is bounded to ~50 known entities rather than an open-ended
-// join across a huge global predicate.
-function buildConstraints(states) {
-  const VALUES = valuesClause(states);
-  return [
-    {
-      name: 'States with Population Over 10 Million',
-      sparql: `
-        SELECT DISTINCT ?state ?stateLabel WHERE {
-          VALUES ?state { ${VALUES} }
-          ?state wdt:P1082 ?population .
-          FILTER(?population > 10000000)
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-      `,
-    },
-    {
-      name: 'States Bordering Canada',
-      sparql: `
-        SELECT DISTINCT ?state ?stateLabel WHERE {
-          VALUES ?state { ${VALUES} }
-          ?state wdt:P47 ?neighbor .
-          ?neighbor wdt:P17 wd:Q16 .
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-      `,
-    },
-    {
-      name: 'States Bordering Mexico',
-      sparql: `
-        SELECT DISTINCT ?state ?stateLabel WHERE {
-          VALUES ?state { ${VALUES} }
-          ?state wdt:P47 ?neighbor .
-          ?neighbor wdt:P17 wd:Q96 .
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-      `,
-    },
-    {
-      name: 'States Admitted to the Union Before 1800',
-      sparql: `
-        SELECT DISTINCT ?state ?stateLabel WHERE {
-          VALUES ?state { ${VALUES} }
-          ?state wdt:P571 ?date .
-          FILTER(YEAR(?date) < 1800)
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-      `,
-    },
-    {
-      name: 'States on the Pacific or Atlantic Ocean',
-      sparql: `
-        SELECT DISTINCT ?state ?stateLabel WHERE {
-          VALUES ?state { ${VALUES} }
-          VALUES ?ocean { wd:Q98 wd:Q97 }
-          ?state wdt:P206 ?ocean .
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-      `,
-    },
-  ];
+function dateThreshold(entities, { name, property, comparator, year }) {
+  return {
+    name,
+    sparql: `
+      SELECT DISTINCT ?item ?itemLabel WHERE {
+        VALUES ?item { ${valuesClause(entities)} }
+        ?item wdt:${property} ?date .
+        FILTER(YEAR(?date) ${comparator} ${year})
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+    `,
+  };
 }
+
+// "?item --relationProperty--> ?related, and ?related is in country X" --
+// e.g. states bordering a Canadian province, via P47 (shares border with).
+function relatedEntityInCountry(entities, { name, relationProperty, countryQid }) {
+  return {
+    name,
+    sparql: `
+      SELECT DISTINCT ?item ?itemLabel WHERE {
+        VALUES ?item { ${valuesClause(entities)} }
+        ?item wdt:${relationProperty} ?related .
+        ?related wdt:P17 wd:${countryQid} .
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+    `,
+  };
+}
+
+// "?item --property--> one of these specific target QIDs" -- e.g. states
+// adjacent to the Pacific or Atlantic Ocean, via P206.
+function hasPropertyValueIn(entities, { name, property, valueQids }) {
+  return {
+    name,
+    sparql: `
+      SELECT DISTINCT ?item ?itemLabel WHERE {
+        VALUES ?item { ${valuesClause(entities)} }
+        VALUES ?target { ${valueQids.map((q) => `wd:${q}`).join(' ')} }
+        ?item wdt:${property} ?target .
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+    `,
+  };
+}
+
+// --- Base classes --------------------------------------------------------
+// Adding a new base class means: its Wikidata class QID, the PIDs backing
+// whichever generic properties its entities actually have, and a list of
+// pattern instances built from those PIDs. No new SPARQL shapes needed
+// unless a genuinely new *kind* of pattern comes up.
+
+const BASE_CLASSES = [
+  {
+    name: 'US states',
+    qid: 'Q35657',
+    properties: {
+      population: 'P1082',
+      inceptionDate: 'P571',
+      sharesBorderWith: 'P47',
+      locatedNextToBodyOfWater: 'P206',
+    },
+    buildConstraints(entities, props) {
+      return [
+        numericThreshold(entities, {
+          name: 'States with Population Over 10 Million',
+          property: props.population,
+          comparator: '>',
+          value: 10000000,
+        }),
+        dateThreshold(entities, {
+          name: 'States Admitted to the Union Before 1800',
+          property: props.inceptionDate,
+          comparator: '<',
+          year: 1800,
+        }),
+        relatedEntityInCountry(entities, {
+          name: 'States Bordering Canada',
+          relationProperty: props.sharesBorderWith,
+          countryQid: 'Q16',
+        }),
+        relatedEntityInCountry(entities, {
+          name: 'States Bordering Mexico',
+          relationProperty: props.sharesBorderWith,
+          countryQid: 'Q96',
+        }),
+        hasPropertyValueIn(entities, {
+          name: 'States on the Pacific or Atlantic Ocean',
+          property: props.locatedNextToBodyOfWater,
+          valueQids: ['Q98', 'Q97'],
+        }),
+      ];
+    },
+  },
+];
 
 async function fetchConstraintResults(constraints) {
   const results = [];
   for (const c of constraints) {
     console.log(`Querying: ${c.name}`);
     const rows = await sparqlQuery(c.sparql);
-    const entities = rows.map((r) => ({ qid: qidFromUri(r.state.value), label: r.stateLabel.value }));
+    const entities = rows.map((r) => ({ qid: qidFromUri(r.item.value), label: r.itemLabel.value }));
     console.log(`  -> ${entities.length} result(s)`);
 
     if (entities.length < MIN_CONSTRAINT_ITEMS) {
@@ -226,6 +287,24 @@ async function findNextFreeDates(supabase, count) {
   return dates;
 }
 
+async function generateCandidateForBaseClass(baseClass) {
+  console.log(`\n=== ${baseClass.name} ===`);
+  console.log(`Fetching ${baseClass.name}...`);
+  const entities = await fetchBaseClassEntities(baseClass.qid);
+  console.log(`  -> ${entities.length} entities`);
+
+  const constraints = baseClass.buildConstraints(entities, baseClass.properties);
+  const constraintResults = await fetchConstraintResults(constraints);
+
+  const collidingPairs = findCollidingPairs(constraintResults);
+  console.log(`Found ${collidingPairs.length} colliding constraint pair(s):`);
+  for (const p of collidingPairs) {
+    console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
+  }
+
+  return assembleCandidate(constraintResults, collidingPairs);
+}
+
 async function main() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -235,35 +314,33 @@ async function main() {
   }
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-  console.log('Fetching US states...');
-  const states = await fetchUsStates();
-  console.log(`  -> ${states.length} states`);
-
-  const constraints = buildConstraints(states);
-  const constraintResults = await fetchConstraintResults(constraints);
-
-  const collidingPairs = findCollidingPairs(constraintResults);
-  console.log(`\nFound ${collidingPairs.length} colliding constraint pair(s):`);
-  for (const p of collidingPairs) {
-    console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
+  const candidates = [];
+  for (const baseClass of BASE_CLASSES) {
+    const candidate = await generateCandidateForBaseClass(baseClass);
+    if (candidate) {
+      candidates.push(candidate);
+    } else {
+      console.log(`No usable candidate for ${baseClass.name} this run.`);
+    }
   }
 
-  const candidate = assembleCandidate(constraintResults, collidingPairs);
-  if (!candidate) {
-    console.log('\nNo usable candidate this run (no colliding pairs, or not enough constraints).');
+  if (candidates.length === 0) {
+    console.log('\nNo candidates generated this run.');
     return;
   }
 
-  const [gameDate] = await findNextFreeDates(supabase, 1);
-  const { error } = await supabase.from('games').insert({
-    game_date: gameDate,
-    content: candidate,
-    source: 'Wikidata (wikidata.org), CC0',
-    status: 'pending',
-  });
-  if (error) throw error;
-
-  console.log(`\nInserted 1 pending candidate for ${gameDate}. Review at /#/admin.`);
+  const dates = await findNextFreeDates(supabase, candidates.length);
+  for (let i = 0; i < candidates.length; i++) {
+    const { error } = await supabase.from('games').insert({
+      game_date: dates[i],
+      content: candidates[i],
+      source: 'Wikidata (wikidata.org), CC0',
+      status: 'pending',
+    });
+    if (error) throw error;
+    console.log(`Inserted pending candidate for ${dates[i]}.`);
+  }
+  console.log(`\nReview at /#/admin.`);
 }
 
 main().catch((err) => {
