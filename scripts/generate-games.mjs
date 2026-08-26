@@ -220,6 +220,61 @@ const BASE_CLASSES = [
             { qid: 'Q97', label: 'Atlantic Ocean' },
           ],
         }),
+        numericThreshold(entities, {
+          entityNoun,
+          propertyLabel: 'Population',
+          property: props.population,
+          comparator: '<',
+          value: 1000000,
+        }),
+        dateThreshold(entities, {
+          entityNoun,
+          eventPhrase: 'Admitted to the Union',
+          property: props.inceptionDate,
+          comparator: '>',
+          year: 1950,
+        }),
+      ];
+    },
+  },
+  {
+    name: 'Countries of the world',
+    qid: 'Q6256',
+    entityNoun: 'Countries',
+    properties: {
+      population: 'P1082',
+      inceptionDate: 'P571',
+      sharesBorderWith: 'P47',
+      locatedNextToBodyOfWater: 'P206',
+    },
+    buildConstraints(entities, props, entityNoun) {
+      return [
+        numericThreshold(entities, {
+          entityNoun,
+          propertyLabel: 'Population',
+          property: props.population,
+          comparator: '>',
+          value: 100000000,
+        }),
+        dateThreshold(entities, {
+          entityNoun,
+          eventPhrase: 'Formed',
+          property: props.inceptionDate,
+          comparator: '<',
+          year: 1800,
+        }),
+        hasPropertyValueIn(entities, {
+          entityNoun,
+          prepositionPhrase: 'Bordering',
+          property: props.sharesBorderWith,
+          values: [{ qid: 'Q148', label: 'China' }],
+        }),
+        hasPropertyValueIn(entities, {
+          entityNoun,
+          prepositionPhrase: 'On the',
+          property: props.locatedNextToBodyOfWater,
+          values: [{ qid: 'Q4918', label: 'Mediterranean Sea' }],
+        }),
       ];
     },
   },
