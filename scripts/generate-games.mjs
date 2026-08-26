@@ -409,22 +409,56 @@ const LEXICAL_TEMPLATES = [
   { name: 'Constellations', qid: 'Q8928', strip: [] },
 ];
 
+// Leading articles are stripped from every name variant regardless of
+// template -- a baseline normalization on top of each template's own
+// custom strip regexes (e.g. " University" -> bare school name).
+const LEADING_ARTICLE = /^(the|an?)\s+/i;
+
 function applyStrip(label, stripRules) {
-  let s = label;
+  let s = label.replace(LEADING_ARTICLE, '');
   for (const re of stripRules) s = s.replace(re, '');
   return s.trim().toLowerCase();
 }
 
+// Wikidata's aliases include a lot of noise for puzzle purposes -- postal
+// codes ("AL"), ISO codes ("US-AL"), phonetic spellings ("AR-kən-saw").
+// Left in, these would create confusing rather than clever collisions (a
+// state's postal code randomly matching some unrelated abbreviation
+// elsewhere). Only accept aliases that read like an actual name: no
+// digits, no non-Latin/phonetic characters, and not a short all-caps code.
+function isUsableAlias(name) {
+  if (name.length < 4) return false;
+  if (/[^A-Za-z .'-]/.test(name)) return false;
+  if (name.length <= 6 && name === name.toUpperCase()) return false;
+  return true;
+}
+
+// Fetches each entity's primary label *and* its English aliases
+// (skos:altLabel -- Wikidata's own "also known as" data) in one query, so
+// e.g. Abraham Lincoln's "Lincoln" alias is available for matching without
+// needing to guess a nickname-extraction heuristic. Every name variant
+// (label + aliases) gets stripped down to a bare key; `nameByKey` maps
+// each bare key back to its original-cased text, so display casing
+// survives even when the match came from an alias, not the primary label.
 async function fetchLexicalTemplateEntities(template) {
   const rows = await sparqlQuery(`
-    SELECT ?item ?itemLabel WHERE {
+    SELECT ?item ?itemLabel (GROUP_CONCAT(DISTINCT ?altLabel; separator="|") as ?altLabels) WHERE {
       ?item wdt:P31 wd:${template.qid} .
+      OPTIONAL { ?item skos:altLabel ?altLabel . FILTER(LANG(?altLabel) = "en") }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-    } ORDER BY ?itemLabel
+    }
+    GROUP BY ?item ?itemLabel
+    ORDER BY ?itemLabel
   `);
   return rows.map((r) => {
     const label = r.itemLabel.value;
-    return { qid: qidFromUri(r.item.value), label, bareKey: applyStrip(label, template.strip) };
+    const aliases = r.altLabels?.value ? r.altLabels.value.split('|').filter(isUsableAlias) : [];
+    const nameByKey = new Map();
+    for (const name of [label, ...aliases]) {
+      const key = applyStrip(name, template.strip);
+      if (key && !nameByKey.has(key)) nameByKey.set(key, name);
+    }
+    return { qid: qidFromUri(r.item.value), label, nameByKey };
   });
 }
 
@@ -447,17 +481,53 @@ async function fetchConstraintResults(constraints) {
   return results;
 }
 
-// `keyFn` is what makes this work for both modes: QID for semantic overlap
-// (same entity, two constraints), stripped label for lexical collision
-// (different entities, same name).
-function findCollidingPairs(constraintResults, keyFn = (e) => e.qid) {
+// `keysFn` is what makes this work for both modes: QID for semantic overlap
+// (same entity, two constraints) -- a one-element array, one key per
+// entity -- or several bare-name keys (label + aliases) for lexical
+// collision (different entities, same name/nickname).
+//
+// Each entity in `b` is matched against `a` on its *first* matching key,
+// then the inner loop stops -- so an entity with several name variants
+// that all happen to match still produces exactly one `shared` entry, not
+// one per matching name. `shared.length` is always "distinct colliding
+// entities," never "matching name-strings" -- this matters for any future
+// total-overlap-count metric and for the existing dedup logic, both of
+// which assume one array entry per entity.
+//
+// `setDisplayFromKey` (lexical mode only): when a match is found via key
+// `k`, record the *specific* name variant that matched (which may be an
+// alias, not either entity's primary label) as `displayOverride` on both
+// entities, so the puzzle shows the word that actually creates the
+// overlap (e.g. "Lincoln") rather than each entity's full canonical label.
+function findCollidingPairs(constraintResults, keysFn = (e) => [e.qid], { setDisplayFromKey = false } = {}) {
   const pairs = [];
   for (let i = 0; i < constraintResults.length; i++) {
     for (let j = i + 1; j < constraintResults.length; j++) {
       const a = constraintResults[i];
       const b = constraintResults[j];
-      const aKeys = new Set(a.entities.map(keyFn));
-      const shared = b.entities.filter((e) => aKeys.has(keyFn(e)));
+
+      const aKeyMap = new Map();
+      for (const e of a.entities) {
+        for (const k of keysFn(e)) {
+          if (!aKeyMap.has(k)) aKeyMap.set(k, e);
+        }
+      }
+
+      const shared = [];
+      for (const e of b.entities) {
+        for (const k of keysFn(e)) {
+          const matchA = aKeyMap.get(k);
+          if (!matchA) continue;
+          if (setDisplayFromKey) {
+            const displayName = e.nameByKey?.get(k) ?? k;
+            e.displayOverride = displayName;
+            matchA.displayOverride = displayName;
+          }
+          shared.push(e);
+          break;
+        }
+      }
+
       if (shared.length > 0) {
         pairs.push({ a, b, shared });
       }
@@ -538,7 +608,7 @@ function assembleCandidate(constraintResults, collidingPairs, existingCategorySe
   best.chosen.forEach((c, i) => {
     content[COLORS[i]] = {
       category_name: c.name,
-      items: c.entities.map((e) => e.label),
+      items: c.entities.map((e) => e.displayOverride ?? e.label),
     };
   });
   return content;
@@ -604,7 +674,8 @@ async function generateLexicalCandidate(existingCategorySets) {
   for (const t of LEXICAL_TEMPLATES) {
     console.log(`Fetching: ${t.name}`);
     const entities = await fetchLexicalTemplateEntities(t);
-    console.log(`  -> ${entities.length} entities`);
+    const totalAliases = entities.reduce((sum, e) => sum + (e.nameByKey.size - 1), 0);
+    console.log(`  -> ${entities.length} entities, ${totalAliases} alias name(s) total`);
     if (entities.length < MIN_CONSTRAINT_ITEMS) {
       console.log(`  -> skipping "${t.name}": too few entities`);
       continue;
@@ -612,10 +683,10 @@ async function generateLexicalCandidate(existingCategorySets) {
     constraintResults.push({ name: t.name, entities });
   }
 
-  const collidingPairs = findCollidingPairs(constraintResults, (e) => e.bareKey);
+  const collidingPairs = findCollidingPairs(constraintResults, (e) => [...e.nameByKey.keys()], { setDisplayFromKey: true });
   console.log(`Found ${collidingPairs.length} colliding template pair(s):`);
   for (const p of collidingPairs) {
-    console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
+    console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.displayOverride ?? s.label).join(', ')}`);
   }
 
   return assembleCandidate(constraintResults, collidingPairs, existingCategorySets);
