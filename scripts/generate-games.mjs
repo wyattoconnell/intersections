@@ -148,12 +148,19 @@ async function fetchYearPercentile(entities, property, percentile) {
 // Distinct values a property actually takes across the base class, most
 // common first, restricted to ones that clear MIN_CONSTRAINT_ITEMS -- so
 // only relational constraints likely to produce a usable category are ever
-// attempted.
-async function fetchDistinctPropertyValues(entities, property, limit) {
+// attempted. `peerTypeQid`, when given, restricts targets to entities that
+// are themselves instances of the same class as the base class (e.g. only
+// actual countries, not supranational bodies like the EU, when discovering
+// what countries border other countries) -- appropriate for "peer" style
+// relations like borders, but not for e.g. "near this body of water" where
+// the target is a genuinely different kind of thing.
+async function fetchDistinctPropertyValues(entities, property, limit, peerTypeQid) {
+  const restrictClause = peerTypeQid ? `?target wdt:P31 wd:${peerTypeQid} .` : '';
   const rows = await sparqlQuery(`
     SELECT ?target ?targetLabel (COUNT(DISTINCT ?item) as ?count) WHERE {
       VALUES ?item { ${valuesClause(entities)} }
       ?item wdt:${property} ?target .
+      ${restrictClause}
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
     }
     GROUP BY ?target ?targetLabel
@@ -164,15 +171,37 @@ async function fetchDistinctPropertyValues(entities, property, limit) {
   return rows.map((r) => ({ qid: qidFromUri(r.target.value), label: r.targetLabel.value }));
 }
 
-// Same idea, but one hop further: "?item --relationProperty--> ?related",
-// grouped by ?related's *country* (P17) rather than ?related itself -- e.g.
-// which countries a state's bordering provinces actually belong to.
-async function fetchDistinctRelatedCountries(entities, relationProperty, limit) {
+// The single country most of the base class's own entities belong to (e.g.
+// USA for US states) -- used to exclude that country from
+// fetchDistinctRelatedCountries below, since it's a trivial/uninteresting
+// match (most of a state's bordering neighbors are *other US states*,
+// which would otherwise make "the country this base class is even in" the
+// single most common "related country" every time).
+async function fetchDominantCountry(entities) {
+  const rows = await sparqlQuery(`
+    SELECT ?country (COUNT(DISTINCT ?item) as ?count) WHERE {
+      VALUES ?item { ${valuesClause(entities)} }
+      ?item wdt:P17 ?country .
+    }
+    GROUP BY ?country
+    ORDER BY DESC(?count)
+    LIMIT 1
+  `);
+  return rows.length > 0 ? qidFromUri(rows[0].country.value) : null;
+}
+
+// Same idea as fetchDistinctPropertyValues, but one hop further:
+// "?item --relationProperty--> ?related", grouped by ?related's *country*
+// (P17) rather than ?related itself -- e.g. which countries a state's
+// bordering provinces actually belong to.
+async function fetchDistinctRelatedCountries(entities, relationProperty, limit, excludeQid) {
+  const excludeClause = excludeQid ? `FILTER(?country != wd:${excludeQid})` : '';
   const rows = await sparqlQuery(`
     SELECT ?country ?countryLabel (COUNT(DISTINCT ?item) as ?count) WHERE {
       VALUES ?item { ${valuesClause(entities)} }
       ?item wdt:${relationProperty} ?related .
       ?related wdt:P17 ?country .
+      ${excludeClause}
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
     }
     GROUP BY ?country ?countryLabel
@@ -279,14 +308,15 @@ async function dateThresholdAuto(entities, { entityNoun, eventPhrase, property, 
 }
 
 async function relatedEntityInCountryAuto(entities, { entityNoun, relationLabel, relationProperty, limit = AUTO_DISCOVERY_LIMIT }) {
-  const countries = await fetchDistinctRelatedCountries(entities, relationProperty, limit);
+  const ownCountry = await fetchDominantCountry(entities);
+  const countries = await fetchDistinctRelatedCountries(entities, relationProperty, limit, ownCountry);
   return countries.map((c) =>
     relatedEntityInCountry(entities, { entityNoun, relationLabel, relationProperty, countryQid: c.qid, countryLabel: c.label })
   );
 }
 
-async function hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase, property, limit = AUTO_DISCOVERY_LIMIT }) {
-  const targets = await fetchDistinctPropertyValues(entities, property, limit);
+async function hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase, property, limit = AUTO_DISCOVERY_LIMIT, peerTypeQid }) {
+  const targets = await fetchDistinctPropertyValues(entities, property, limit, peerTypeQid);
   return targets.map((t) => hasPropertyValueIn(entities, { entityNoun, prepositionPhrase, property, values: [t] }));
 }
 
@@ -350,7 +380,12 @@ const BASE_CLASSES = [
         ...(await dateThresholdAuto(entities, { entityNoun, eventPhrase: 'Formed', property: props.inceptionDate, comparator: '<', percentile: 0.25 }))
       );
       constraints.push(
-        ...(await hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase: 'Bordering', property: props.sharesBorderWith }))
+        ...(await hasPropertyValueInAuto(entities, {
+          entityNoun,
+          prepositionPhrase: 'Bordering',
+          property: props.sharesBorderWith,
+          peerTypeQid: 'Q6256', // only actual countries, not supranational bodies like the EU
+        }))
       );
       constraints.push(
         ...(await hasPropertyValueInAuto(entities, { entityNoun, prepositionPhrase: 'On the', property: props.locatedNextToBodyOfWater }))
