@@ -247,7 +247,7 @@ async function main() {
   const { error } = await supabase.from('games').insert({
     game_date: gameDate,
     content: candidate,
-    source: 'generated-semantic',
+    source: 'Wikidata (wikidata.org), CC0',
     status: 'pending',
   });
   if (error) throw error;
