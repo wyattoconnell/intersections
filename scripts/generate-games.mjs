@@ -19,6 +19,12 @@ const SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql';
 const USER_AGENT = 'IntersectionsGameGenerator/1.0 (https://intersections.in; game content generator)';
 const MIN_REQUEST_GAP_MS = 1200; // be polite to the public WDQS endpoint
 const COLORS = ['blue', 'red', 'yellow', 'green'];
+// item-selector.service.ts needs >=3 items to ever "cover" a category, so a
+// constraint that comes back thinner than this isn't usable -- whether
+// because the pattern genuinely doesn't apply to this base class (e.g.
+// "borders" queried against college mascots) or just happened to match few
+// entities. Either way, empirically too sparse is empirically too sparse.
+const MIN_CONSTRAINT_ITEMS = 3;
 
 let lastRequestAt = 0;
 
@@ -135,6 +141,11 @@ async function fetchConstraintResults(constraints) {
     const rows = await sparqlQuery(c.sparql);
     const entities = rows.map((r) => ({ qid: qidFromUri(r.state.value), label: r.stateLabel.value }));
     console.log(`  -> ${entities.length} result(s)`);
+
+    if (entities.length < MIN_CONSTRAINT_ITEMS) {
+      console.log(`  -> skipping "${c.name}": too few results to form a category (needs >=${MIN_CONSTRAINT_ITEMS})`);
+      continue;
+    }
     results.push({ name: c.name, entities });
   }
   return results;
