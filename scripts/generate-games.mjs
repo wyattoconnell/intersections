@@ -9,11 +9,13 @@
 //
 // Constraints are built from a small set of reusable *pattern* functions
 // (numericThreshold, dateThreshold, ...) rather than hand-written SPARQL
-// per constraint. Each base class supplies a `properties` map (which PID
-// backs "population," "founding date," etc. for its entities) and a list
-// of pattern instances built from those properties -- so adding a new base
-// class means declaring its properties + constraint list, not writing new
-// SPARQL shapes.
+// per constraint. Each pattern also computes its own category_name from
+// the same structured parameters used to build the query -- there's no
+// separate free-text name to keep in sync by hand. Each base class
+// supplies a `properties` map (which PID backs "population," "founding
+// date," etc. for its entities) and a list of pattern instances built from
+// those properties -- so adding a new base class means declaring its
+// properties + constraint list, not writing new SPARQL shapes or names.
 //
 // Run manually:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/generate-games.mjs
@@ -34,6 +36,10 @@ const COLORS = ['blue', 'red', 'yellow', 'green'];
 // "borders" queried against college mascots) or just happened to match few
 // entities. Either way, empirically too sparse is empirically too sparse.
 const MIN_CONSTRAINT_ITEMS = 3;
+// Reject a candidate if its best available combination still shares this
+// many (or more) of its 4 categories with an existing pending/approved/
+// rejected game -- i.e. it's basically the same puzzle again.
+const MAX_ACCEPTABLE_CATEGORY_OVERLAP = 2;
 
 let lastRequestAt = 0;
 
@@ -82,10 +88,18 @@ async function fetchBaseClassEntities(qid) {
 // --- Reusable constraint patterns -------------------------------------
 // Each takes the base class's entity universe (to bound the query) plus
 // pattern-specific parameters, and returns a { name, sparql } constraint.
-// Property PIDs and specific thresholds/targets are supplied by each base
-// class's config below -- these functions only know the query *shape*.
+// The category_name is computed from those same parameters (entity noun,
+// property label, comparator, value/target labels) rather than being a
+// separately hand-typed string -- change a threshold and the name updates
+// with it. Property PIDs and specific thresholds/targets are supplied by
+// each base class's config below; these functions only know the query
+// *shape* and how to phrase it in English.
 
-function numericThreshold(entities, { name, property, comparator, value }) {
+const NUMERIC_COMPARATOR_WORDS = { '>': 'Over', '<': 'Under', '>=': 'At Least', '<=': 'At Most' };
+const DATE_COMPARATOR_WORDS = { '<': 'Before', '>': 'After', '<=': 'By', '>=': 'Since' };
+
+function numericThreshold(entities, { entityNoun, propertyLabel, property, comparator, value }) {
+  const name = `${entityNoun} with ${propertyLabel} ${NUMERIC_COMPARATOR_WORDS[comparator]} ${value.toLocaleString('en-US')}`;
   return {
     name,
     sparql: `
@@ -99,7 +113,8 @@ function numericThreshold(entities, { name, property, comparator, value }) {
   };
 }
 
-function dateThreshold(entities, { name, property, comparator, year }) {
+function dateThreshold(entities, { entityNoun, eventPhrase, property, comparator, year }) {
+  const name = `${entityNoun} ${eventPhrase} ${DATE_COMPARATOR_WORDS[comparator]} ${year}`;
   return {
     name,
     sparql: `
@@ -115,7 +130,8 @@ function dateThreshold(entities, { name, property, comparator, year }) {
 
 // "?item --relationProperty--> ?related, and ?related is in country X" --
 // e.g. states bordering a Canadian province, via P47 (shares border with).
-function relatedEntityInCountry(entities, { name, relationProperty, countryQid }) {
+function relatedEntityInCountry(entities, { entityNoun, relationLabel, relationProperty, countryQid, countryLabel }) {
+  const name = `${entityNoun} ${relationLabel} ${countryLabel}`;
   return {
     name,
     sparql: `
@@ -130,14 +146,16 @@ function relatedEntityInCountry(entities, { name, relationProperty, countryQid }
 }
 
 // "?item --property--> one of these specific target QIDs" -- e.g. states
-// adjacent to the Pacific or Atlantic Ocean, via P206.
-function hasPropertyValueIn(entities, { name, property, valueQids }) {
+// adjacent to the Pacific or Atlantic Ocean, via P206. `values` is
+// [{ qid, label }, ...] since these targets need a display label too.
+function hasPropertyValueIn(entities, { entityNoun, prepositionPhrase, property, values }) {
+  const name = `${entityNoun} ${prepositionPhrase} ${values.map((v) => v.label).join(' or ')}`;
   return {
     name,
     sparql: `
       SELECT DISTINCT ?item ?itemLabel WHERE {
         VALUES ?item { ${valuesClause(entities)} }
-        VALUES ?target { ${valueQids.map((q) => `wd:${q}`).join(' ')} }
+        VALUES ?target { ${values.map((v) => `wd:${v.qid}`).join(' ')} }
         ?item wdt:${property} ?target .
         SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
       }
@@ -146,49 +164,61 @@ function hasPropertyValueIn(entities, { name, property, valueQids }) {
 }
 
 // --- Base classes --------------------------------------------------------
-// Adding a new base class means: its Wikidata class QID, the PIDs backing
-// whichever generic properties its entities actually have, and a list of
-// pattern instances built from those PIDs. No new SPARQL shapes needed
-// unless a genuinely new *kind* of pattern comes up.
+// Adding a new base class means: its Wikidata class QID, an English noun
+// for its entities, the PIDs backing whichever generic properties its
+// entities actually have, and a list of pattern instances built from those
+// PIDs. No new SPARQL shapes or hand-written names needed unless a
+// genuinely new *kind* of pattern comes up.
 
 const BASE_CLASSES = [
   {
     name: 'US states',
     qid: 'Q35657',
+    entityNoun: 'States',
     properties: {
       population: 'P1082',
       inceptionDate: 'P571',
       sharesBorderWith: 'P47',
       locatedNextToBodyOfWater: 'P206',
     },
-    buildConstraints(entities, props) {
+    buildConstraints(entities, props, entityNoun) {
       return [
         numericThreshold(entities, {
-          name: 'States with Population Over 10 Million',
+          entityNoun,
+          propertyLabel: 'Population',
           property: props.population,
           comparator: '>',
           value: 10000000,
         }),
         dateThreshold(entities, {
-          name: 'States Admitted to the Union Before 1800',
+          entityNoun,
+          eventPhrase: 'Admitted to the Union',
           property: props.inceptionDate,
           comparator: '<',
           year: 1800,
         }),
         relatedEntityInCountry(entities, {
-          name: 'States Bordering Canada',
+          entityNoun,
+          relationLabel: 'Bordering',
           relationProperty: props.sharesBorderWith,
           countryQid: 'Q16',
+          countryLabel: 'Canada',
         }),
         relatedEntityInCountry(entities, {
-          name: 'States Bordering Mexico',
+          entityNoun,
+          relationLabel: 'Bordering',
           relationProperty: props.sharesBorderWith,
           countryQid: 'Q96',
+          countryLabel: 'Mexico',
         }),
         hasPropertyValueIn(entities, {
-          name: 'States on the Pacific or Atlantic Ocean',
+          entityNoun,
+          prepositionPhrase: 'On the',
           property: props.locatedNextToBodyOfWater,
-          valueQids: ['Q98', 'Q97'],
+          values: [
+            { qid: 'Q98', label: 'Pacific Ocean' },
+            { qid: 'Q97', label: 'Atlantic Ocean' },
+          ],
         }),
       ];
     },
@@ -228,15 +258,15 @@ function findCollidingPairs(constraintResults) {
   return pairs;
 }
 
-function assembleCandidate(constraintResults, collidingPairs) {
-  if (collidingPairs.length === 0) return null;
-
-  const chosen = [collidingPairs[0].a, collidingPairs[0].b];
+// Builds one candidate 4-category assembly anchored on a specific colliding
+// pair, preferring a second independent colliding pair to fill the other
+// two slots (falls back to any other constraint if none exists).
+function buildAssemblyFromAnchorPair(anchorPair, collidingPairs, constraintResults) {
+  const chosen = [anchorPair.a, anchorPair.b];
   const chosenNames = new Set(chosen.map((c) => c.name));
 
-  // Prefer a second, independent colliding pair to fill the other two slots.
   const secondPair = collidingPairs.find(
-    (p) => !chosenNames.has(p.a.name) && !chosenNames.has(p.b.name)
+    (p) => p !== anchorPair && !chosenNames.has(p.a.name) && !chosenNames.has(p.b.name)
   );
   if (secondPair) {
     chosen.push(secondPair.a, secondPair.b);
@@ -250,16 +280,70 @@ function assembleCandidate(constraintResults, collidingPairs) {
     }
   }
 
-  if (chosen.length < 4) return null;
+  return chosen.length >= 4 ? chosen.slice(0, 4) : null;
+}
+
+// How many of `names` already appear together in some existing game --
+// the worst (highest) match against any single existing game, since that's
+// what "this feels like a repeat" actually means.
+function overlapWithExisting(names, existingCategorySets) {
+  let worst = 0;
+  for (const existing of existingCategorySets) {
+    let count = 0;
+    for (const n of names) if (existing.has(n)) count++;
+    worst = Math.max(worst, count);
+  }
+  return worst;
+}
+
+function assembleCandidate(constraintResults, collidingPairs, existingCategorySets) {
+  if (collidingPairs.length === 0) return null;
+
+  const candidates = [];
+  const seen = new Set();
+  for (const anchorPair of collidingPairs) {
+    const chosen = buildAssemblyFromAnchorPair(anchorPair, collidingPairs, constraintResults);
+    if (!chosen) continue;
+
+    const names = chosen.map((c) => c.name).sort();
+    const key = names.join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    candidates.push({ chosen, overlap: overlapWithExisting(names, existingCategorySets) });
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => a.overlap - b.overlap);
+  const best = candidates[0];
+
+  if (best.overlap > MAX_ACCEPTABLE_CATEGORY_OVERLAP) {
+    console.log(
+      `  -> best available combination still shares ${best.overlap}/4 categories with an existing game; ` +
+        `skipping (add more constraints for variety)`
+    );
+    return null;
+  }
 
   const content = {};
-  chosen.slice(0, 4).forEach((c, i) => {
+  best.chosen.forEach((c, i) => {
     content[COLORS[i]] = {
       category_name: c.name,
       items: c.entities.map((e) => e.label),
     };
   });
   return content;
+}
+
+function categoryNameSet(content) {
+  return new Set(Object.values(content).map((c) => c.category_name));
+}
+
+async function fetchExistingCategoryNameSets(supabase) {
+  const { data, error } = await supabase.from('games').select('content');
+  if (error) throw error;
+  return (data ?? []).map((row) => categoryNameSet(row.content));
 }
 
 function ymd(date) {
@@ -287,13 +371,13 @@ async function findNextFreeDates(supabase, count) {
   return dates;
 }
 
-async function generateCandidateForBaseClass(baseClass) {
+async function generateCandidateForBaseClass(baseClass, existingCategorySets) {
   console.log(`\n=== ${baseClass.name} ===`);
   console.log(`Fetching ${baseClass.name}...`);
   const entities = await fetchBaseClassEntities(baseClass.qid);
   console.log(`  -> ${entities.length} entities`);
 
-  const constraints = baseClass.buildConstraints(entities, baseClass.properties);
+  const constraints = baseClass.buildConstraints(entities, baseClass.properties, baseClass.entityNoun);
   const constraintResults = await fetchConstraintResults(constraints);
 
   const collidingPairs = findCollidingPairs(constraintResults);
@@ -302,7 +386,7 @@ async function generateCandidateForBaseClass(baseClass) {
     console.log(`  "${p.a.name}" x "${p.b.name}": ${p.shared.map((s) => s.label).join(', ')}`);
   }
 
-  return assembleCandidate(constraintResults, collidingPairs);
+  return assembleCandidate(constraintResults, collidingPairs, existingCategorySets);
 }
 
 async function main() {
@@ -314,11 +398,17 @@ async function main() {
   }
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
+  // Checked against every existing game regardless of status: a pending
+  // near-duplicate is still a near-duplicate, and no point re-offering
+  // something already rejected either.
+  const existingCategorySets = await fetchExistingCategoryNameSets(supabase);
+
   const candidates = [];
   for (const baseClass of BASE_CLASSES) {
-    const candidate = await generateCandidateForBaseClass(baseClass);
+    const candidate = await generateCandidateForBaseClass(baseClass, existingCategorySets);
     if (candidate) {
       candidates.push(candidate);
+      existingCategorySets.push(categoryNameSet(candidate)); // avoid duplicating within this same run too
     } else {
       console.log(`No usable candidate for ${baseClass.name} this run.`);
     }
