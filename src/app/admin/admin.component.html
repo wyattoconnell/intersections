@@ -28,7 +28,11 @@
       <div class="categories">
         <div *ngFor="let cat of categoriesOf(game)" class="category" [ngClass]="cat.color">
           <div class="category-name bold">{{ cat.name }}</div>
-          <div class="category-items normal">{{ cat.items.join(', ') }}</div>
+          <div class="category-items normal">
+            <ng-container *ngFor="let item of cat.items; let last = last">
+              <span [class.bold]="item.overlap">{{ item.text }}</span><ng-container *ngIf="!last">, </ng-container>
+            </ng-container>
+          </div>
         </div>
       </div>
 
